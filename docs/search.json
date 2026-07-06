@@ -375,7 +375,7 @@
     "href": "pages/01_data/dist_discrete/index.html#이항-분포-pmf-그려-보기",
     "title": "이산형 분포 — 코드 실습",
     "section": "1. 이항 분포 — PMF 그려 보기",
-    "text": "1. 이항 분포 — PMF 그려 보기\n이항 분포 \\(X \\sim B(n, p)\\)의 확률질량함수는\n\\[P(X = x) = \\binom{n}{x} p^x (1-p)^{n-x}, \\quad x = 0, 1, \\dots, n\\]\ndbinom()으로 각 \\(x\\)의 확률을 계산해 막대그래프로 그립니다. 모수를 바꾸면 분포 모양이 어떻게 달라지는지 확인하세요.\n\n\n\n\n\n\n\n\n이론적 평균은 \\(np\\), 분산은 \\(np(1-p)\\) 입니다. 난수를 뽑아 이론값과 비교해 봅시다."
+    "text": "1. 이항 분포 — PMF 그려 보기\n이항 분포 \\(X \\sim B(n, p)\\)의 확률질량함수는\n\\[P(X = x) = \\binom{n}{x} p^x (1-p)^{n-x}, \\quad x = 0, 1, \\dots, n\\]\ndbinom()으로 각 \\(x\\)의 확률을 계산해 막대그래프로 그립니다. 슬라이더를 움직이면 아래 R 셀이 자동으로 다시 실행되고(OJS 입력 → R 주입), 셀 코드 자체도 여전히 직접 고쳐 실행할 수 있습니다.\n\nviewof n_slider = Inputs.range([1, 50], {value: 10, step: 1, label: \"시행 횟수 (n)\"})\nviewof p_slider = Inputs.range([0.05, 0.95], {value: 0.4, step: 0.05, label: \"성공 확률 (p)\"})\n\n// webR 호출은 수 초 걸린다 — 드래그 이벤트가 전부 큐잉되지 않도록 디바운스(GOTCHA §9h)\nn = debounce(viewof n_slider)\np = debounce(viewof p_slider)\n\nfunction debounce(view, delay = 500) {\n  return Generators.observe(notify =&gt; {\n    let timer = null;\n    notify(view.value);\n    const oninput = () =&gt; {\n      clearTimeout(timer);\n      timer = setTimeout(() =&gt; notify(view.value), delay);\n    };\n    view.addEventListener(\"input\", oninput);\n    return () =&gt; { clearTimeout(timer); view.removeEventListener(\"input\", oninput); };\n  });\n}\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n이론적 평균은 \\(np\\), 분산은 \\(np(1-p)\\) 입니다. 난수를 뽑아 이론값과 비교해 봅시다."
   },
   {
     "objectID": "pages/01_data/dist_discrete/index.html#포아송-분포-드문-사건의-횟수",
