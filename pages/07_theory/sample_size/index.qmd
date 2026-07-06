@@ -1,0 +1,124 @@
+---
+engine: knitr
+title: "표본 크기 — 코드 실습"
+webr:
+  packages: [ggplot2]
+---
+
+{{< include ../../../_extensions/r-wasm/live/_knitr.qmd >}}
+
+[← BitStat2 Live 홈](../../../index.qmd)
+
+표본 크기가 너무 작으면 실제로 존재하는 효과를 놓치고, 너무 크면 시간과 비용이 낭비됩니다.
+유의수준 $\alpha$와 검정력 $1-\beta$를 정하면 필요한 표본 크기를 공식으로 직접 계산할 수 있습니다.
+
+## 1. 평균 비교의 표본 크기
+
+두 정규 모집단의 평균을 비교할 때 그룹당 표본 크기는 다음과 같습니다.
+
+$$n = \frac{(\sigma_1^2 + \sigma_2^2)(z_{\alpha/2} + z_\beta)^2}{(\mu_2 - \mu_1)^2}$$
+
+```{webr}
+mu1 <- 100; s1 <- 10    # 그룹 1의 평균·표준편차 — 바꿔 보세요
+mu2 <- 105; s2 <- 12    # 그룹 2의 평균·표준편차 — 바꿔 보세요
+alpha <- 0.05           # 유의수준 — 0.01로 바꿔 보세요
+power <- 0.8            # 검정력 — 0.9로 바꿔 보세요
+
+zalpha <- qnorm(1 - alpha / 2)
+zbeta  <- qnorm(power)
+n <- (s1^2 + s2^2) * (zalpha + zbeta)^2 / (mu2 - mu1)^2
+ceiling(n)   # 그룹당 필요한 표본 크기 (올림)
+```
+
+두 평균의 차이(`mu2 - mu1`)를 줄이면 $n$이 급격히 커집니다 — 분모가 차이의 **제곱**이기 때문입니다.
+
+## 2. 검정력에 따른 표본 크기 곡선
+
+검정력을 높일수록 표본이 얼마나 더 필요한지 곡선으로 확인해 봅시다.
+
+```{webr}
+library(ggplot2)
+
+s1 <- 10; s2 <- 12      # 표준편차 — 바꿔 보세요
+delta <- 5              # 탐지하려는 평균 차이 — 3으로 줄여 보세요
+alpha <- 0.05
+
+power_seq <- seq(0.5, 0.99, by = 0.01)
+n_seq <- ceiling((s1^2 + s2^2) *
+                 (qnorm(1 - alpha / 2) + qnorm(power_seq))^2 / delta^2)
+
+p <- ggplot(data.frame(power = power_seq, n = n_seq), aes(power, n)) +
+  geom_line(color = "#8a1500", linewidth = 1) +
+  labs(title = "검정력에 따른 그룹당 표본 크기",
+       x = "검정력 (1 - β)", y = "그룹당 표본 크기 n") +
+  theme_minimal(base_size = 13) +
+  theme(text = element_text(family = "NanumGothic"))
+suppressWarnings(print(p))
+```
+
+## 3. 비율 비교의 표본 크기
+
+두 이항 비율 $p_1$, $p_2$를 비교할 때(그룹 2 크기 = 그룹 1의 $k$배)의 공식도 코드로 옮길 수 있습니다.
+
+```{webr}
+p1 <- 0.15; p2 <- 0.12  # 두 그룹의 예상 비율 — 바꿔 보세요
+k <- 1                  # 그룹 크기 비 — 2로 바꿔 보세요
+alpha <- 0.05; power <- 0.8
+
+zalpha <- qnorm(1 - alpha / 2)
+zbeta  <- qnorm(power)
+p <- (p1 + k * p2) / (1 + k)          # 합동(pooled) 비율
+num <- sqrt(p * (1 - p) * (1 + 1/k)) * zalpha +
+       sqrt(p1 * (1 - p1) + p2 * (1 - p2) / k) * zbeta
+n1 <- ceiling(num^2 / (p1 - p2)^2)
+c(그룹1 = n1, 그룹2 = ceiling(k * n1))
+```
+
+비율 차이 0.03을 탐지하는 데 그룹당 수천 명이 필요합니다 — 작은 효과일수록 표본은 커집니다.
+
+## 4. 연습 — 표본 크기 공식 완성하기
+
+평균 비교 공식에서 분자의 빈칸을 채워 그룹당 표본 크기를 계산하세요.
+
+```{webr}
+#| exercise: ex_n_mean
+mu1 <- 100; s1 <- 10
+mu2 <- 105; s2 <- 12
+alpha <- 0.05; power <- 0.8
+
+zalpha <- qnorm(1 - alpha / 2)
+zbeta  <- qnorm(power)
+n <- ceiling((s1^2 + s2^2) * (______)^2 / (mu2 - mu1)^2)
+n
+```
+
+```{webr}
+#| exercise: ex_n_mean
+#| check: true
+tryCatch({
+  za <- qnorm(1 - get("alpha", envir = .envir_result) / 2)
+  zb <- qnorm(get("power", envir = .envir_result))
+  s1v <- get("s1", envir = .envir_result)
+  s2v <- get("s2", envir = .envir_result)
+  d <- get("mu2", envir = .envir_result) - get("mu1", envir = .envir_result)
+  n_expected <- ceiling((s1v^2 + s2v^2) * (za + zb)^2 / d^2)
+  if (isTRUE(all.equal(.result, n_expected))) {
+    list(correct = TRUE, message = paste0("정답! 그룹당 n = ", n_expected, "명이 필요합니다."))
+  } else {
+    list(correct = FALSE, message = "아직 아니에요 — 괄호 안은 두 z값의 합, 즉 zalpha + zbeta입니다.")
+  }
+}, error = function(e) {
+  list(correct = FALSE, message = "위쪽 변수들은 지우지 말고, 빈칸만 채워 실행하세요.")
+})
+```
+
+::: { .hint exercise="ex_n_mean" }
+분자는 $(\sigma_1^2+\sigma_2^2)(z_{\alpha/2}+z_\beta)^2$ 입니다. 괄호 안에 `zalpha + zbeta`를 넣으세요.
+:::
+
+::: { .solution exercise="ex_n_mean" }
+```r
+n <- ceiling((s1^2 + s2^2) * (zalpha + zbeta)^2 / (mu2 - mu1)^2)
+n
+```
+:::

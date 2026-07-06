@@ -1,0 +1,145 @@
+---
+engine: knitr
+title: "데이터 시각화 — 코드 실습"
+webr:
+  packages: [ggplot2]
+---
+
+{{< include ../../../_extensions/r-wasm/live/_knitr.qmd >}}
+
+[← BitStat2 Live 홈](../../../index.qmd)
+
+데이터 시각화의 출발점은 **변수를 그래프 요소(x축·y축·색상)에 대응**시키는 것입니다.
+ggplot2로 산점도·히스토그램·회귀선을 직접 그리며 이 대응(aes)을 손에 익혀 봅시다.
+
+## 1. 산점도 — 변수를 축과 색에 대응하기
+
+`mtcars` 내장 데이터로 차량 무게(`wt`)와 연비(`mpg`)의 관계를 그립니다.
+`aes()` 안의 변수와 점 크기·투명도를 바꿔 보세요.
+
+```{webr}
+library(ggplot2)
+
+p <- ggplot(mtcars, aes(x = wt, y = mpg, colour = factor(cyl))) +  # x, y 변수를 바꿔 보세요 (예: hp, disp)
+  geom_point(size = 3, alpha = 0.7) +                              # size·alpha 값을 바꿔 보세요
+  labs(title = "차량 무게와 연비의 관계",
+       x = "무게 (1000 lbs)", y = "연비 (mpg)", colour = "실린더 수") +
+  theme_minimal(base_size = 13) +
+  theme(text = element_text(family = "NanumGothic"))
+suppressWarnings(print(p))
+```
+
+## 2. 히스토그램 — 구간 개수(bins)가 인상을 바꾼다
+
+같은 데이터라도 `bins`에 따라 분포의 인상이 달라집니다.
+`faithful` 간헐천 분출 시간으로 확인해 보세요.
+
+```{webr}
+library(ggplot2)
+
+p <- ggplot(faithful, aes(x = eruptions)) +
+  geom_histogram(bins = 20, fill = "#4a4a44", colour = "white") +  # bins를 5, 50 등으로 바꿔 보세요
+  labs(title = "간헐천 분출 시간의 분포",
+       x = "분출 시간 (분)", y = "빈도") +
+  theme_minimal(base_size = 13) +
+  theme(text = element_text(family = "NanumGothic"))
+suppressWarnings(print(p))
+```
+
+적당한 구간 개수의 고전적 기준으로 **스터지스 공식**이 있습니다:
+$$k = \lceil \log_2 n \rceil + 1$$
+
+## 3. 회귀선 — 추세를 한 층 얹기
+
+`geom_smooth(method = "lm")`은 산점도 위에 직선 추세를 얹습니다.
+`iris` 데이터에서 종(Species)별로 나눠 보세요.
+
+```{webr}
+library(ggplot2)
+
+p <- ggplot(iris, aes(x = Petal.Length, y = Petal.Width, colour = Species)) +
+  geom_point(alpha = 0.6) +
+  geom_smooth(method = "lm", se = TRUE) +   # se = FALSE로 바꿔 신뢰띠를 꺼 보세요
+  labs(title = "붓꽃 꽃잎 길이와 너비",
+       x = "꽃잎 길이 (cm)", y = "꽃잎 너비 (cm)", colour = "종") +
+  theme_minimal(base_size = 13) +
+  theme(text = element_text(family = "NanumGothic"))
+suppressWarnings(print(p))
+```
+
+## 4. 연습 — 스터지스 공식으로 bins 정하기
+
+관측값이 $n$개일 때 스터지스 공식의 구간 개수는 $k = \lceil \log_2 n \rceil + 1$ 입니다.
+`faithful`의 관측값 개수로 $k$를 계산하도록 빈칸을 채우세요. (올림은 `ceiling()`)
+
+```{webr}
+#| exercise: ex_bins
+n <- nrow(faithful)
+k <- ______
+k
+```
+
+```{webr}
+#| exercise: ex_bins
+#| check: true
+tryCatch({
+  k_expected <- ceiling(log2(get("n", envir = .envir_result))) + 1
+  if (isTRUE(all.equal(.result, k_expected))) {
+    list(correct = TRUE, message = paste0("정답! n = 272이면 k = ", k_expected, "개 구간이 기준선입니다."))
+  } else {
+    list(correct = FALSE, message = "아직 아니에요 — log2(n)을 ceiling()으로 올림한 뒤 1을 더하세요.")
+  }
+}, error = function(e) {
+  list(correct = FALSE, message = "n <- nrow(faithful)은 그대로 두고, k <- 빈칸만 채워 실행하세요.")
+})
+```
+
+::: { .hint exercise="ex_bins" }
+공식 그대로 옮기면 됩니다: `ceiling(log2(n)) + 1`.
+:::
+
+::: { .solution exercise="ex_bins" }
+```r
+k <- ceiling(log2(n)) + 1
+k
+```
+:::
+
+## 5. 연습 — 상자그림 위쪽 울타리
+
+상자그림(boxplot)은 $Q_3 + 1.5 \times IQR$ 보다 큰 값을 이상치 후보로 표시합니다.
+`mtcars$mpg`의 위쪽 울타리(upper fence)를 계산하세요.
+
+```{webr}
+#| exercise: ex_fence
+q3  <- quantile(mtcars$mpg, 0.75)
+iqr <- IQR(mtcars$mpg)
+upper <- ______
+unname(upper)
+```
+
+```{webr}
+#| exercise: ex_fence
+#| check: true
+tryCatch({
+  fence_expected <- unname(get("q3", envir = .envir_result) + 1.5 * get("iqr", envir = .envir_result))
+  if (isTRUE(all.equal(unname(.result), fence_expected))) {
+    list(correct = TRUE, message = paste0("정답! 위쪽 울타리 = Q3 + 1.5×IQR = ", signif(fence_expected, 4)))
+  } else {
+    list(correct = FALSE, message = "아직 아니에요 — Q3에 IQR의 1.5배를 더하세요: q3 + 1.5 * iqr.")
+  }
+}, error = function(e) {
+  list(correct = FALSE, message = "q3와 iqr은 그대로 두고, upper <- 빈칸만 채워 실행하세요.")
+})
+```
+
+::: { .hint exercise="ex_fence" }
+울타리는 사분위수 범위의 1.5배만큼 상자 밖으로 나갑니다: `q3 + 1.5 * iqr`.
+:::
+
+::: { .solution exercise="ex_fence" }
+```r
+upper <- q3 + 1.5 * iqr
+unname(upper)
+```
+:::

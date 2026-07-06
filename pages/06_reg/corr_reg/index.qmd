@@ -1,0 +1,130 @@
+---
+engine: knitr
+title: "상관분석과 단순 회귀분석 — 코드 실습"
+webr:
+  packages: [ggplot2]
+---
+
+{{< include ../../../_extensions/r-wasm/live/_knitr.qmd >}}
+
+[← BitStat2 Live 홈](../../../index.qmd)
+
+상관분석은 두 변수 사이 관계의 **방향과 강도**를 상관계수 $r$ 로 요약하고,
+단순 회귀분석은 한 변수(독립변수 $x$)로 다른 변수(종속변수 $y$)를 예측하는 직선 $\hat{y} = b_0 + b_1 x$ 를 찾습니다.
+
+## 1. 산점도와 상관계수
+
+`mtcars` 데이터에서 차량 무게(`wt`)와 연비(`mpg`)의 관계를 봅니다.
+변수를 바꿔 가며 상관계수의 부호와 크기가 어떻게 달라지는지 확인하세요.
+
+```{webr}
+x_var <- "wt"    # ← 다른 수치 변수로 바꿔 보세요: "hp", "disp", "qsec"
+y_var <- "mpg"
+
+r <- cor(mtcars[[x_var]], mtcars[[y_var]])
+cat("상관계수 r =", round(r, 3), "\n")
+cat("결정계수 r² =", round(r^2, 3), "\n\n")
+cor.test(mtcars[[x_var]], mtcars[[y_var]])
+```
+
+```{webr}
+library(ggplot2)
+
+p <- ggplot(mtcars, aes(wt, mpg)) +   # ← aes(hp, mpg) 등으로 바꿔 보세요
+  geom_point(colour = "#4a4a44", size = 2) +
+  geom_smooth(method = "lm", se = FALSE, colour = "#8a1500") +
+  labs(title = "차량 무게와 연비의 관계 (회귀선 포함)",
+       x = "무게 (1000 lbs)", y = "연비 (mpg)") +
+  theme_minimal(base_size = 13) +
+  theme(text = element_text(family = "NanumGothic"))
+suppressWarnings(print(p))
+```
+
+## 2. 단순 회귀분석 — lm()
+
+$\hat{y} = b_0 + b_1 x$ 의 절편 $b_0$ 와 기울기 $b_1$ 은 `lm()`이 최소제곱법으로 추정합니다.
+`summary()` 출력의 `Multiple R-squared`가 위에서 계산한 $r^2$ 와 같은지 확인하세요.
+
+```{webr}
+fit <- lm(mpg ~ wt, data = mtcars)   # ← mpg ~ hp 등으로 바꿔 보세요
+summary(fit)
+
+# 새 관측값 예측: 무게 3.0(=3000 lbs)인 차의 예상 연비
+predict(fit, newdata = data.frame(wt = 3.0))   # ← wt 값을 바꿔 보세요
+```
+
+## 3. 연습 — 상관계수와 결정계수
+
+`faithful` 데이터(간헐천 분출)의 분출 시간과 대기 시간 사이 상관계수를 구하세요.
+
+```{webr}
+#| exercise: ex_cor
+x <- faithful$eruptions
+y <- faithful$waiting
+r <- ______
+r
+```
+
+```{webr}
+#| exercise: ex_cor
+#| check: true
+tryCatch({
+  r_expected <- cor(get("x", envir = .envir_result), get("y", envir = .envir_result))
+  if (isTRUE(all.equal(.result, r_expected))) {
+    list(correct = TRUE, message = paste0("정답! r = ", round(r_expected, 3), " — 강한 양의 상관입니다."))
+  } else {
+    list(correct = FALSE, message = "아직 아니에요 — 두 변수의 상관계수는 cor(x, y)로 구합니다.")
+  }
+}, error = function(e) {
+  list(correct = FALSE, message = "x와 y는 지우지 말고, r <- 빈칸만 채워 실행하세요.")
+})
+```
+
+::: { .hint exercise="ex_cor" }
+상관계수 함수는 `cor()`이고, 두 변수를 인자로 넣습니다: `cor(x, y)`.
+:::
+
+::: { .solution exercise="ex_cor" }
+```r
+r <- cor(x, y)
+r
+```
+:::
+
+상관계수의 제곱은 회귀분석의 **결정계수** $r^2$ 와 같습니다.
+`summary(fit)$r.squared` 와 일치하는 값을 `r` 로부터 계산하세요.
+
+```{webr}
+#| exercise: ex_r2
+fit <- lm(waiting ~ eruptions, data = faithful)
+r <- cor(faithful$eruptions, faithful$waiting)
+r2 <- ______
+r2
+```
+
+```{webr}
+#| exercise: ex_r2
+#| check: true
+tryCatch({
+  r2_expected <- get("r", envir = .envir_result)^2
+  if (isTRUE(all.equal(.result, r2_expected))) {
+    list(correct = TRUE, message = paste0("정답! r² = ", round(r2_expected, 3),
+      " — summary(fit)$r.squared와 같은 값입니다."))
+  } else {
+    list(correct = FALSE, message = "아직 아니에요 — 결정계수는 상관계수의 제곱, 즉 r^2입니다.")
+  }
+}, error = function(e) {
+  list(correct = FALSE, message = "fit과 r은 지우지 말고, r2 <- 빈칸만 채워 실행하세요.")
+})
+```
+
+::: { .hint exercise="ex_r2" }
+결정계수는 상관계수를 제곱한 값입니다: `r^2`.
+:::
+
+::: { .solution exercise="ex_r2" }
+```r
+r2 <- r^2
+r2
+```
+:::

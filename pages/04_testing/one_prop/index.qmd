@@ -1,0 +1,150 @@
+---
+engine: knitr
+title: "단일 비율 가설 검정 — 코드 실습"
+webr:
+  packages: [ggplot2]
+---
+
+{{< include ../../../_extensions/r-wasm/live/_knitr.qmd >}}
+
+[← BitStat2 Live 홈](../../../index.qmd)
+
+모집단 비율 $p$가 특정 값 $p_0$와 같은지 검정합니다. 표본이 충분히 크면($np_0 \geq 5$, $n(1-p_0) \geq 5$) 표본비율 $\hat{p}$는 정규분포에 근사하므로 z-검정을 쓸 수 있습니다.
+
+## 1. 검정통계량 직접 계산
+
+결함 제품 12개 / 전체 100개를 관찰했을 때, "결함률은 10%"라는 귀무가설 $H_0: p = 0.10$을 검정합니다. 검정통계량은
+
+$$z_{obs} = \frac{\hat{p} - p_0}{\sqrt{p_0(1-p_0)/n}}$$
+
+```{webr}
+x  <- 12     # 성공(결함) 횟수 — 바꿔 보세요
+n  <- 100    # 표본 크기 — 바꿔 보세요
+p0 <- 0.10   # 귀무가설의 비율 — 바꿔 보세요
+
+p_hat <- x / n
+se0   <- sqrt(p0 * (1 - p0) / n)   # H0 하에서의 표준오차
+z_obs <- (p_hat - p0) / se0
+p_val <- 2 * pnorm(abs(z_obs), lower.tail = FALSE)   # 양측 p-값
+cat("p_hat =", p_hat, "| z =", round(z_obs, 3), "| p-값 =", round(p_val, 4), "\n")
+```
+
+R 내장 `prop.test()`로 같은 검정을 수행하면 (연속성 보정 여부에 따라 값이 약간 다릅니다):
+
+```{webr}
+# correct = FALSE 로 바꾸면 손계산 z^2 = X-squared 와 일치 — 바꿔 보세요
+prop.test(12, 100, p = 0.10, alternative = "two.sided", correct = TRUE)
+```
+
+## 2. 기각역 그림으로 보기
+
+유의수준 $\alpha = 0.05$ 양측검정에서 검정통계량이 기각역(색칠 영역)에 들어가는지 확인합니다.
+
+```{webr}
+library(ggplot2)
+
+z_obs <- 0.667   # 위에서 계산한 검정통계량 — 바꿔 보세요
+alpha <- 0.05    # 유의수준 — 바꿔 보세요
+
+z_crit <- qnorm(1 - alpha / 2)
+grid <- data.frame(x = seq(-4, 4, length.out = 400))
+grid$y <- dnorm(grid$x)
+reject <- subset(grid, abs(x) >= z_crit)
+
+p <- ggplot(grid, aes(x, y)) +
+  geom_line(color = "#4a4a44") +
+  geom_area(data = reject, aes(x, y), fill = "#8a1500", alpha = 0.5) +
+  geom_vline(xintercept = z_obs, color = "#1f5f8b", linewidth = 1) +
+  annotate("text", x = z_obs, y = 0.3, angle = 90, vjust = -0.4,
+           label = paste0("z_obs = ", round(z_obs, 3)), family = "NanumGothic") +
+  labs(title = "표준정규분포와 양측 기각역",
+       x = "z", y = "밀도") +
+  theme_minimal(base_size = 13) +
+  theme(text = element_text(family = "NanumGothic"))
+suppressWarnings(print(p))
+```
+
+## 3. 연습 — 검정통계량 완성하기
+
+여론조사에서 200명 중 88명이 찬성했습니다. $H_0: p = 0.5$의 검정통계량 $z$를 계산하도록 빈칸을 채우세요. 분모는 **귀무가설 비율 `p0`로 계산한 표준오차** `se0`입니다.
+
+```{webr}
+#| exercise: ex_zstat
+x  <- 88
+n  <- 200
+p0 <- 0.5
+
+p_hat <- x / n
+se0   <- sqrt(p0 * (1 - p0) / n)
+z <- ______
+z
+```
+
+```{webr}
+#| exercise: ex_zstat
+#| check: true
+tryCatch({
+  p_hat_r <- get("p_hat", envir = .envir_result)
+  p0_r    <- get("p0", envir = .envir_result)
+  se0_r   <- get("se0", envir = .envir_result)
+  z_expected <- (p_hat_r - p0_r) / se0_r
+  if (isTRUE(all.equal(.result, z_expected))) {
+    list(correct = TRUE, message = paste0("정답! z = (p_hat - p0)/se0 = ", signif(z_expected, 4),
+                                          " — |z| > 1.96 이므로 5% 수준에서 H0 기각."))
+  } else {
+    list(correct = FALSE, message = "아직 아니에요 — 분자는 (p_hat - p0), 분모는 se0 입니다.")
+  }
+}, error = function(e) {
+  list(correct = FALSE, message = "x, n, p0, p_hat, se0 는 지우지 말고 z <- 빈칸만 채워 실행하세요.")
+})
+```
+
+::: { .hint exercise="ex_zstat" }
+표본비율에서 귀무가설 비율을 뺀 값을 표준오차로 나눕니다: `(p_hat - p0) / se0`.
+:::
+
+::: { .solution exercise="ex_zstat" }
+```r
+z <- (p_hat - p0) / se0
+z
+```
+:::
+
+## 4. 연습 — 양측 p-값
+
+위에서 구한 $z$의 **양측 p-값**을 계산하세요. 정규분포 오른쪽 꼬리 확률의 2배입니다: $p = 2\,P(Z \geq |z_{obs}|)$.
+
+```{webr}
+#| exercise: ex_pval
+z_obs <- -1.697
+p_val <- 2 * pnorm(______, lower.tail = FALSE)
+p_val
+```
+
+```{webr}
+#| exercise: ex_pval
+#| check: true
+tryCatch({
+  z_r <- get("z_obs", envir = .envir_result)
+  p_expected <- 2 * pnorm(abs(z_r), lower.tail = FALSE)
+  if (isTRUE(all.equal(.result, p_expected))) {
+    list(correct = TRUE, message = paste0("정답! p-값 = ", signif(p_expected, 4),
+                                          " — 0.05보다 크므로 H0를 기각하지 못합니다."))
+  } else {
+    list(correct = FALSE, message = "아직 아니에요 — z_obs가 음수여도 되도록 절댓값 abs(z_obs)를 넣으세요.")
+  }
+}, error = function(e) {
+  list(correct = FALSE, message = "z_obs 는 지우지 말고 pnorm() 안의 빈칸만 채워 실행하세요.")
+})
+```
+
+::: { .hint exercise="ex_pval" }
+꼬리 확률은 검정통계량의 **절댓값** 기준입니다: `abs(z_obs)`.
+:::
+
+::: { .solution exercise="ex_pval" }
+```r
+p_val <- 2 * pnorm(abs(z_obs), lower.tail = FALSE)
+p_val
+```
+:::

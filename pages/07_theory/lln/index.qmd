@@ -1,0 +1,141 @@
+---
+engine: knitr
+title: "대수의 법칙 — 코드 실습"
+webr:
+  packages: [ggplot2]
+---
+
+{{< include ../../../_extensions/r-wasm/live/_knitr.qmd >}}
+
+[← BitStat2 Live 홈](../../../index.qmd)
+
+동전을 반복해서 던질수록 앞면 비율은 이론적 확률 $p = 0.5$ 에 가까워집니다.
+이것이 **대수의 법칙**(Law of Large Numbers)입니다: 시행 횟수 $n$ 이 커지면 표본평균 $\bar{X}_n$ 은 모평균 $\mu$ 로 수렴합니다.
+
+## 1. 동전 던지기 — 누적 비율의 수렴
+
+시행 횟수를 늘려 보세요. 앞면 비율(누적)이 0.5로 다가가는 모습이 보입니다.
+
+```{webr}
+library(ggplot2)
+
+set.seed(42)
+n_trials <- 200          # 시행 횟수 — 바꿔 보세요 (예: 20, 1000, 5000)
+tosses <- sample(c(0, 1), n_trials, replace = TRUE)
+prop_cum <- cumsum(tosses) / seq_len(n_trials)
+
+df <- data.frame(trial = seq_len(n_trials), prop = prop_cum)
+p <- ggplot(df, aes(trial, prop)) +
+  geom_line(colour = "#8a1500") +
+  geom_hline(yintercept = 0.5, linetype = "dashed", colour = "#4a4a44") +
+  coord_cartesian(ylim = c(0, 1)) +
+  labs(title = paste0("동전 던지기 ", n_trials, "회 — 앞면 비율의 수렴"),
+       x = "시행 횟수", y = "앞면 비율 (누적)") +
+  theme_minimal(base_size = 13) +
+  theme(text = element_text(family = "NanumGothic"))
+suppressWarnings(print(p))
+```
+
+## 2. 동전 여러 개 — 경로는 달라도 도착지는 같다
+
+동전마다 경로는 들쭉날쭉하지만, 모두 0.5로 모입니다. 동전 개수와 시행 횟수를 바꿔 보세요.
+
+```{webr}
+library(ggplot2)
+
+set.seed(7)
+n_trials <- 500          # 시행 횟수 — 바꿔 보세요
+n_coins  <- 5            # 동전 개수 — 바꿔 보세요 (예: 2, 10, 20)
+
+df <- do.call(rbind, lapply(seq_len(n_coins), function(i) {
+  tosses <- sample(c(0, 1), n_trials, replace = TRUE)
+  data.frame(trial = seq_len(n_trials),
+             prop  = cumsum(tosses) / seq_len(n_trials),
+             coin  = paste0("동전 ", i))
+}))
+
+p <- ggplot(df, aes(trial, prop, colour = coin)) +
+  geom_line(alpha = 0.8) +
+  geom_hline(yintercept = 0.5, linetype = "dashed", colour = "#4a4a44") +
+  coord_cartesian(ylim = c(0, 1)) +
+  labs(title = paste0("동전 ", n_coins, "개 × ", n_trials, "회 — 대수의 법칙"),
+       x = "시행 횟수", y = "앞면 비율 (누적)", colour = NULL) +
+  theme_minimal(base_size = 13) +
+  theme(text = element_text(family = "NanumGothic"))
+suppressWarnings(print(p))
+```
+
+## 3. 연습 — 표본비율과 누적 비율
+
+**연습 1.** 앞면(1)이 나온 **표본비율**은 0/1 벡터의 평균입니다. 빈칸을 채워 실행하세요.
+
+```{webr}
+#| exercise: ex_prop
+set.seed(1)
+tosses <- rbinom(1000, size = 1, prob = 0.5)
+prop <- ______
+prop
+```
+
+```{webr}
+#| exercise: ex_prop
+#| check: true
+tryCatch({
+  prop_expected <- mean(get("tosses", envir = .envir_result))
+  if (isTRUE(all.equal(.result, prop_expected))) {
+    list(correct = TRUE, message = paste0("정답! 표본비율 = mean(tosses) = ", signif(prop_expected, 4), " — 0.5에 가깝죠."))
+  } else {
+    list(correct = FALSE, message = "아직 아니에요 — 0/1 벡터에서 1의 비율은 평균, 즉 mean(tosses)입니다.")
+  }
+}, error = function(e) {
+  list(correct = FALSE, message = "set.seed와 tosses는 그대로 두고, prop <- 빈칸만 채워 실행하세요.")
+})
+```
+
+::: { .hint exercise="ex_prop" }
+0과 1로 이루어진 벡터의 평균이 곧 1의 비율입니다: `mean(tosses)`.
+:::
+
+::: { .solution exercise="ex_prop" }
+```r
+prop <- mean(tosses)
+prop
+```
+:::
+
+**연습 2.** 시행 횟수별 **누적 비율**은 누적합을 시행 번호로 나눈 것입니다: $\hat{p}_k = \frac{1}{k}\sum_{i=1}^{k} X_i$.
+
+```{webr}
+#| exercise: ex_cum
+set.seed(2)
+tosses <- rbinom(300, size = 1, prob = 0.5)
+prop_cum <- ______ / seq_along(tosses)
+tail(prop_cum, 1)   # 마지막 누적 비율 — 0.5 근처인지 확인
+```
+
+```{webr}
+#| exercise: ex_cum
+#| check: true
+tryCatch({
+  cum_expected <- cumsum(get("tosses", envir = .envir_result)) /
+    seq_along(get("tosses", envir = .envir_result))
+  if (isTRUE(all.equal(.result, tail(cum_expected, 1)))) {
+    list(correct = TRUE, message = paste0("정답! cumsum(tosses)/seq_along(tosses) — 마지막 값 ", signif(tail(cum_expected, 1), 4), "로 0.5에 수렴합니다."))
+  } else {
+    list(correct = FALSE, message = "아직 아니에요 — 분자는 누적합, 즉 cumsum(tosses)입니다.")
+  }
+}, error = function(e) {
+  list(correct = FALSE, message = "tosses와 분모 seq_along(tosses)는 그대로 두고, 분자 빈칸만 채워 실행하세요.")
+})
+```
+
+::: { .hint exercise="ex_cum" }
+k번째까지의 합은 `cumsum(tosses)`의 k번째 원소입니다.
+:::
+
+::: { .solution exercise="ex_cum" }
+```r
+prop_cum <- cumsum(tosses) / seq_along(tosses)
+tail(prop_cum, 1)
+```
+:::

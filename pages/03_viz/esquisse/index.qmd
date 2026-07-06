@@ -1,0 +1,150 @@
+---
+engine: knitr
+title: "그래프 문법 — 코드 실습"
+webr:
+  packages: [ggplot2]
+---
+
+{{< include ../../../_extensions/r-wasm/live/_knitr.qmd >}}
+
+[← BitStat2 Live 홈](../../../index.qmd)
+
+ggplot2의 **그래프 문법**(grammar of graphics)은 그림을 문장처럼 조립합니다:
+**데이터** + **미학 매핑**(`aes`) + **기하 객체**(`geom`)가 기본 뼈대이고, 그 위에 레이어를 `+`로 쌓아 올립니다.
+
+## 1. 뼈대 — 데이터 · aes · geom
+
+`aes()`는 데이터의 변수를 그림의 속성(x, y, 색)에 **매핑**합니다. 아래 코드를 직접 바꿔 실행해 보세요.
+
+```{webr}
+library(ggplot2)
+
+p <- ggplot(iris, aes(x = Sepal.Length,       # x = 꽃받침 길이 — 바꿔 보세요 (예: Petal.Length)
+                      y = Sepal.Width,        # y = 꽃받침 폭
+                      colour = Species)) +    # 색 매핑을 지워 보세요 — 무엇이 달라지나요?
+  geom_point(size = 2, alpha = 0.8) +         # geom_point → geom_jitter 로 바꿔 보세요
+  labs(title = "붓꽃 데이터 — 그래프 문법의 세 요소",
+       x = "꽃받침 길이 (cm)", y = "꽃받침 폭 (cm)", colour = "품종") +
+  theme_minimal(base_size = 13) +
+  theme(text = element_text(family = "NanumGothic"))
+suppressWarnings(print(p))
+```
+
+## 2. 레이어 쌓기 — 통계 요약과 패싯
+
+같은 뼈대 위에 `geom_smooth()`(추세선)와 `facet_wrap()`(패널 나누기)을 `+`로 더합니다.
+레이어 하나를 지우거나 순서를 바꿔도 문법이 성립하는지 확인해 보세요.
+
+```{webr}
+library(ggplot2)
+
+p <- ggplot(mtcars, aes(x = wt, y = mpg)) +
+  geom_point(colour = "#4a4a44") +
+  geom_smooth(method = "lm", se = TRUE, colour = "#8a1500") +  # se = FALSE 로 바꿔 보세요
+  facet_wrap(~ cyl) +                                          # 이 줄을 지우면? (패싯 제거)
+  labs(title = "차 무게와 연비 — 실린더 수별 패싯",
+       x = "무게 (1000 lbs)", y = "연비 (mpg)") +
+  theme_minimal(base_size = 13) +
+  theme(text = element_text(family = "NanumGothic"))
+suppressWarnings(print(p))
+```
+
+히스토그램은 x 하나만 매핑하고, `stat`이 도수를 대신 계산해 주는 geom입니다.
+계급 폭 `binwidth`에 따라 그림의 인상이 크게 달라집니다.
+
+```{webr}
+library(ggplot2)
+
+p <- ggplot(faithful, aes(x = eruptions)) +
+  geom_histogram(binwidth = 0.25,             # 0.05, 1 등으로 바꿔 보세요
+                 fill = "#4a4a44", colour = "white") +
+  labs(title = "간헐천 분출 시간의 분포",
+       x = "분출 지속 시간 (분)", y = "도수") +
+  theme_minimal(base_size = 13) +
+  theme(text = element_text(family = "NanumGothic"))
+suppressWarnings(print(p))
+```
+
+## 3. 연습
+
+### 연습 1 — aes 매핑 채우기
+
+꽃잎 길이(`Petal.Length`)를 y축에 매핑해 산점도를 완성하세요.
+
+```{webr}
+#| exercise: ex_aes_map
+library(ggplot2)
+p <- ggplot(iris, aes(x = Sepal.Length, y = ______, colour = Species)) +
+  geom_point()
+p
+```
+
+```{webr}
+#| exercise: ex_aes_map
+#| check: true
+tryCatch({
+  p_user <- get("p", envir = .envir_result)
+  y_user <- rlang::as_label(p_user$mapping$y)
+  if (isTRUE(all.equal(y_user, "Petal.Length"))) {
+    list(correct = TRUE, message = "정답! aes(y = Petal.Length) — 변수를 y축에 매핑했습니다.")
+  } else {
+    list(correct = FALSE, message = paste0("아직 아니에요 — 지금 y에는 ", y_user,
+      " 이(가) 매핑되어 있습니다. 꽃잎 길이 변수 이름은 P로 시작하는 iris의 열입니다."))
+  }
+}, error = function(e) {
+  list(correct = FALSE, message = "p <- ggplot(...) 구조를 지우지 말고, ______ 자리만 채워 실행하세요.")
+})
+```
+
+::: { .hint exercise="ex_aes_map" }
+`names(iris)`를 실행하면 열 이름이 보입니다. 꽃잎 길이는 `Petal.Length`입니다.
+:::
+
+::: { .solution exercise="ex_aes_map" }
+```r
+p <- ggplot(iris, aes(x = Sepal.Length, y = Petal.Length, colour = Species)) +
+  geom_point()
+p
+```
+:::
+
+### 연습 2 — 계급 폭 계산
+
+자료의 범위를 계급 수 $k$로 나누면 계급 폭이 됩니다:
+$$\text{binwidth} = \frac{\max(x) - \min(x)}{k}$$
+
+```{webr}
+#| exercise: ex_binwidth
+x <- faithful$eruptions
+k <- 15
+bw <- ______
+bw
+```
+
+```{webr}
+#| exercise: ex_binwidth
+#| check: true
+tryCatch({
+  x_val <- get("x", envir = .envir_result)
+  k_val <- get("k", envir = .envir_result)
+  bw_expected <- (max(x_val) - min(x_val)) / k_val
+  if (isTRUE(all.equal(.result, bw_expected))) {
+    list(correct = TRUE, message = paste0("정답! binwidth = (max − min)/k = ", signif(bw_expected, 4)))
+  } else {
+    list(correct = FALSE, message = "아직 아니에요 — 분자는 범위 max(x) - min(x), 분모는 계급 수 k입니다.")
+  }
+}, error = function(e) {
+  list(correct = FALSE, message = "x와 k를 지우지 말고, bw <- 빈칸만 채워 실행하세요.")
+})
+```
+
+::: { .hint exercise="ex_binwidth" }
+범위는 `max(x) - min(x)`이고, 이것을 `k`로 나눕니다.
+:::
+
+::: { .solution exercise="ex_binwidth" }
+```r
+bw <- (max(x) - min(x)) / k
+bw
+```
+:::

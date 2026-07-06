@@ -1,0 +1,147 @@
+---
+engine: knitr
+title: "이표본 평균차이 검정 — 코드 실습"
+webr:
+  packages: [ggplot2]
+---
+
+{{< include ../../../_extensions/r-wasm/live/_knitr.qmd >}}
+
+[← BitStat2 Live 홈](../../../index.qmd)
+
+두 독립 집단의 평균 차이가 우연인지 아닌지는 **이표본 t-검정**으로 판단합니다.
+R의 `t.test()`는 `var.equal` 옵션으로 등분산 가정(합동분산 t)과 이분산(Welch t)을 모두 지원합니다.
+
+## 1. `t.test()`로 두 집단 비교
+
+`mtcars`에서 변속기 종류(`am`: 0 = 자동, 1 = 수동)에 따라 연비(`mpg`) 평균이 다른지 검정합니다.
+
+```{webr}
+data <- mtcars
+
+# 이표본 t-검정 — 바꿔 보세요: var.equal = TRUE (합동분산) / FALSE (Welch)
+result <- t.test(mpg ~ am, data = data,
+                 alternative = "two.sided",  # "less", "greater"로 바꿔 보세요
+                 var.equal = FALSE)
+result
+```
+
+출력에서 $t$ 통계량, 자유도(Welch는 소수점 자유도), $p$-값, 평균 차이의 신뢰구간을 확인하세요.
+$p < 0.05$이면 유의수준 5%에서 "두 평균이 같다"는 귀무가설 $H_0: \mu_1 - \mu_2 = 0$을 기각합니다.
+
+두 집단의 분포를 눈으로 먼저 비교해 봅니다.
+
+```{webr}
+library(ggplot2)
+
+p <- ggplot(mtcars, aes(x = factor(am, labels = c("자동", "수동")), y = mpg)) +
+  geom_boxplot(fill = "#4a4a44", alpha = .4, width = .5) +   # width를 바꿔 보세요
+  geom_jitter(width = .08, colour = "#8a1500", alpha = .7) +
+  labs(title = "변속기 종류별 연비 분포", x = "변속기", y = "연비 (mpg)") +
+  theme_minimal(base_size = 13) +
+  theme(text = element_text(family = "NanumGothic"))
+suppressWarnings(print(p))
+```
+
+## 2. 검정 통계량을 손으로 계산
+
+Welch t-통계량은 다음과 같습니다.
+
+$$t = \frac{\bar{x}_1 - \bar{x}_2}{\sqrt{\dfrac{s_1^2}{n_1} + \dfrac{s_2^2}{n_2}}}$$
+
+난수로 두 표본을 만들어 분모(표준오차)와 $t$를 직접 계산해 봅니다.
+
+```{webr}
+set.seed(123)                       # 시드를 바꿔 보세요
+x <- rnorm(30, mean = 10, sd = 2)   # 집단 1 — mean을 11, 12로 바꿔 보세요
+y <- rnorm(30, mean = 10, sd = 2)   # 집단 2
+
+se_diff <- sqrt(var(x)/length(x) + var(y)/length(y))
+t_obs   <- (mean(x) - mean(y)) / se_diff
+c(표준오차 = se_diff, t통계량 = t_obs)
+
+# t.test()의 statistic과 일치하는지 확인
+t.test(x, y, var.equal = FALSE)$statistic
+```
+
+## 3. 연습 — 평균 차이의 표준오차
+
+빈칸을 채워 $\sqrt{s_1^2/n_1 + s_2^2/n_2}$ 를 계산하세요.
+
+```{webr}
+#| exercise: ex_sediff
+s1 <- 2.5; n1 <- 40
+s2 <- 3.0; n2 <- 50
+se_diff <- sqrt(______ + s2^2/n2)
+se_diff
+```
+
+```{webr}
+#| exercise: ex_sediff
+#| check: true
+tryCatch({
+  se_expected <- sqrt(get("s1", envir = .envir_result)^2 / get("n1", envir = .envir_result) +
+                      get("s2", envir = .envir_result)^2 / get("n2", envir = .envir_result))
+  if (isTRUE(all.equal(.result, se_expected))) {
+    list(correct = TRUE, message = paste0("정답! se = √(s1²/n1 + s2²/n2) = ", signif(se_expected, 4)))
+  } else {
+    list(correct = FALSE, message = "아직 아니에요 — 빈칸은 집단 1의 분산을 표본 크기로 나눈 s1^2/n1 입니다.")
+  }
+}, error = function(e) {
+  list(correct = FALSE, message = "s1, n1, s2, n2는 지우지 말고, 빈칸만 채워 실행하세요.")
+})
+```
+
+::: { .hint exercise="ex_sediff" }
+근호 안은 두 항의 합입니다. 두 번째 항이 `s2^2/n2`이니 첫 항은 같은 꼴로 `s1^2/n1`.
+:::
+
+::: { .solution exercise="ex_sediff" }
+```r
+se_diff <- sqrt(s1^2/n1 + s2^2/n2)
+se_diff
+```
+:::
+
+## 4. 연습 — p-값 꺼내기
+
+`t.test()` 결과 객체에서 $p$-값을 꺼내 보세요. 결과 객체는 리스트라서 `$` 로 성분을 꺼낼 수 있습니다.
+
+```{webr}
+#| exercise: ex_pval
+set.seed(7)
+a <- rnorm(25, mean = 5.0, sd = 1)
+b <- rnorm(25, mean = 5.8, sd = 1)
+res <- t.test(a, b, var.equal = FALSE)
+pval <- ______
+pval
+```
+
+```{webr}
+#| exercise: ex_pval
+#| check: true
+tryCatch({
+  a0 <- get("a", envir = .envir_result)
+  b0 <- get("b", envir = .envir_result)
+  p_expected <- t.test(a0, b0, var.equal = FALSE)$p.value
+  if (isTRUE(all.equal(.result, p_expected))) {
+    list(correct = TRUE, message = paste0("정답! p-값 = ", signif(p_expected, 4),
+                                          " — 0.05보다 작으니 H0를 기각합니다."))
+  } else {
+    list(correct = FALSE, message = "아직 아니에요 — 검정 결과 객체에서 res$p.value 처럼 성분을 꺼내 보세요.")
+  }
+}, error = function(e) {
+  list(correct = FALSE, message = "set.seed와 a, b, res는 그대로 두고 pval <- 빈칸만 채워 실행하세요.")
+})
+```
+
+::: { .hint exercise="ex_pval" }
+`str(res)`로 성분 이름을 확인해 보세요. p-값 성분의 이름은 `p.value`입니다.
+:::
+
+::: { .solution exercise="ex_pval" }
+```r
+pval <- res$p.value
+pval
+```
+:::

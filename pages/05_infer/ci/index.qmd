@@ -1,0 +1,156 @@
+---
+engine: knitr
+title: "신뢰구간 — 코드 실습"
+webr:
+  packages: [ggplot2]
+---
+
+{{< include ../../../_extensions/r-wasm/live/_knitr.qmd >}}
+
+[← BitStat2 Live 홈](../../../index.qmd)
+
+신뢰구간은 표본에서 계산한 추정값 주위에 **모수가 들어 있을 법한 범위**를 씌운 것입니다.
+95% 신뢰구간이란 "같은 방법으로 구간을 반복해서 만들면 그중 약 95%가 참값을 포함한다"는 뜻입니다.
+
+## 1. 평균의 신뢰구간 계산
+
+표본평균 $\bar{x}$의 $100(1-\alpha)\%$ 신뢰구간은 $\bar{x} \pm t_{\alpha/2,\,n-1} \cdot s/\sqrt{n}$ 입니다.
+내장 데이터 `faithful`(간헐천 분출 시간)로 직접 계산해 봅시다.
+
+```{webr}
+x <- faithful$eruptions
+n <- length(x)
+xbar <- mean(x)
+se <- sd(x) / sqrt(n)
+
+conf_level <- 0.95   # 신뢰수준 — 바꿔 보세요 (예: 0.90, 0.99)
+t_crit <- qt(1 - (1 - conf_level) / 2, df = n - 1)
+
+c(하한 = xbar - t_crit * se, 상한 = xbar + t_crit * se)
+```
+
+신뢰수준을 높이면 구간이 **넓어지고**, 낮추면 **좁아지는** 것을 확인하세요.
+
+## 2. 모의실험 — 구간이 참값을 얼마나 자주 포함할까
+
+모집단($\mu = 10$)에서 표본을 여러 번 뽑아 매번 신뢰구간을 만들면,
+그중 약 95%가 참값 $\mu$를 포함합니다. 직접 세어 봅시다.
+
+```{webr}
+library(ggplot2)
+set.seed(42)          # 재현용 — 바꾸면 다른 표본이 뽑힙니다
+
+n_samples   <- 50     # 구간 개수 — 바꿔 보세요
+sample_size <- 30     # 표본 크기 — 바꿔 보세요
+conf_level  <- 0.95   # 신뢰수준 — 바꿔 보세요
+mu <- 10; sigma <- 2
+
+t_crit <- qt(1 - (1 - conf_level) / 2, df = sample_size - 1)
+res <- t(replicate(n_samples, {
+  s <- rnorm(sample_size, mean = mu, sd = sigma)
+  m <- mean(s); moe <- t_crit * sd(s) / sqrt(sample_size)
+  c(m, m - moe, m + moe)
+}))
+df <- data.frame(번호 = 1:n_samples, 평균 = res[, 1],
+                 하한 = res[, 2], 상한 = res[, 3])
+df$포함 <- ifelse(df$하한 <= mu & mu <= df$상한, "포함", "미포함")
+
+p <- ggplot(df, aes(x = 번호, y = 평균, color = 포함)) +
+  geom_errorbar(aes(ymin = 하한, ymax = 상한), width = 0) +
+  geom_point(size = 1.5) +
+  geom_hline(yintercept = mu, linetype = "dashed") +
+  scale_color_manual(values = c(포함 = "#009E73", 미포함 = "#D55E00")) +
+  coord_flip() +
+  labs(title = paste0(conf_level * 100, "% 신뢰구간 ", n_samples,
+                      "개 중 포함률: ", round(mean(df$포함 == "포함") * 100), "%"),
+       x = "표본 번호", y = "표본 평균") +
+  theme_minimal(base_size = 13) +
+  theme(text = element_text(family = "NanumGothic"))
+suppressWarnings(print(p))
+```
+
+`conf_level`을 0.80으로 낮추면 미포함(주황) 구간이 눈에 띄게 늘어납니다.
+
+## 3. 연습 — 오차한계 계산
+
+오차한계(margin of error)는 $t_{\alpha/2,\,n-1} \cdot s/\sqrt{n}$ 입니다. 빈칸을 채워 실행하세요.
+
+```{webr}
+#| exercise: ex_moe
+s <- 4
+n <- 25
+t_crit <- qt(0.975, df = n - 1)
+moe <- ______
+moe
+```
+
+```{webr}
+#| exercise: ex_moe
+#| check: true
+tryCatch({
+  moe_expected <- get("t_crit", envir = .envir_result) *
+    get("s", envir = .envir_result) / sqrt(get("n", envir = .envir_result))
+  if (isTRUE(all.equal(.result, moe_expected))) {
+    list(correct = TRUE, message = paste0("정답! moe = t*s/√n = ", signif(moe_expected, 4)))
+  } else {
+    list(correct = FALSE, message = "아직 아니에요 — 임계값 t_crit에 표준오차 s/sqrt(n)을 곱하세요.")
+  }
+}, error = function(e) {
+  list(correct = FALSE, message = "s, n, t_crit을 지우지 말고 moe <- 빈칸만 채워 실행하세요.")
+})
+```
+
+::: { .hint exercise="ex_moe" }
+오차한계 = 임계값 × 표준오차, 즉 `t_crit * s / sqrt(n)`.
+:::
+
+::: { .solution exercise="ex_moe" }
+```r
+moe <- t_crit * s / sqrt(n)
+moe
+```
+:::
+
+## 4. 연습 — 비율의 신뢰구간
+
+표본비율 $\hat{p}$의 표준오차는 $\sqrt{\hat{p}(1-\hat{p})/n}$ 입니다. 빈칸을 채워 95% 신뢰구간을 완성하세요.
+
+```{webr}
+#| exercise: ex_prop
+p_hat <- 0.4
+n <- 100
+z <- qnorm(0.975)
+se <- sqrt(______)
+c(하한 = p_hat - z * se, 상한 = p_hat + z * se)
+```
+
+```{webr}
+#| exercise: ex_prop
+#| check: true
+tryCatch({
+  p_hat <- get("p_hat", envir = .envir_result)
+  n <- get("n", envir = .envir_result)
+  z <- get("z", envir = .envir_result)
+  se_expected <- sqrt(p_hat * (1 - p_hat) / n)
+  ci_expected <- c(하한 = p_hat - z * se_expected, 상한 = p_hat + z * se_expected)
+  if (isTRUE(all.equal(.result, ci_expected))) {
+    list(correct = TRUE, message = paste0("정답! 95% 신뢰구간 = [",
+      signif(ci_expected[1], 3), ", ", signif(ci_expected[2], 3), "]"))
+  } else {
+    list(correct = FALSE, message = "아직 아니에요 — sqrt() 안은 p_hat * (1 - p_hat) / n 입니다.")
+  }
+}, error = function(e) {
+  list(correct = FALSE, message = "p_hat, n, z를 지우지 말고 sqrt() 안의 빈칸만 채워 실행하세요.")
+})
+```
+
+::: { .hint exercise="ex_prop" }
+비율의 분산 추정은 `p_hat * (1 - p_hat)`이고, 이를 `n`으로 나눈 값의 제곱근이 표준오차입니다.
+:::
+
+::: { .solution exercise="ex_prop" }
+```r
+se <- sqrt(p_hat * (1 - p_hat) / n)
+c(하한 = p_hat - z * se, 상한 = p_hat + z * se)
+```
+:::

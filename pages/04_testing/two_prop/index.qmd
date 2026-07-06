@@ -1,0 +1,161 @@
+---
+engine: knitr
+title: "2-비율 가설 검정 — 코드 실습"
+webr:
+  packages: [ggplot2]
+---
+
+{{< include ../../../_extensions/r-wasm/live/_knitr.qmd >}}
+
+[← BitStat2 Live 홈](../../../index.qmd)
+
+두 독립 집단에서 관찰된 비율 $\hat{p}_1, \hat{p}_2$의 차이가 우연인지 검정합니다.
+귀무가설 $H_0: p_1 = p_2$ 아래에서 검정 통계량은 합동비율 $\hat{p}$를 써서 계산합니다.
+
+$$z = \frac{\hat{p}_1 - \hat{p}_2}{\sqrt{\hat{p}(1-\hat{p})\left(\frac{1}{n_1}+\frac{1}{n_2}\right)}}, \qquad \hat{p} = \frac{x_1 + x_2}{n_1 + n_2}$$
+
+## 1. `prop.test()`로 한 번에 검정하기
+
+정당 A는 500명 중 250명, 정당 B는 500명 중 230명이 지지했습니다. 두 지지율이 다르다고 할 수 있을까요?
+
+```{webr}
+x1 <- 250; n1 <- 500   # 정당 A: 지지자 수, 표본 크기 — 바꿔 보세요
+x2 <- 230; n2 <- 500   # 정당 B — 바꿔 보세요 (예: x2 <- 200)
+
+prop.test(x = c(x1, x2), n = c(n1, n2), correct = FALSE)
+```
+
+`p-value`가 유의수준 0.05보다 작은지 확인하세요. `x2`를 200으로 줄이면 결론이 어떻게 바뀌나요?
+
+## 2. z 통계량을 손으로 계산하기
+
+`prop.test()`가 내부에서 하는 일을 공식 그대로 재현합니다.
+(참고: `prop.test`의 X-squared는 이 $z$의 제곱입니다.)
+
+```{webr}
+x1 <- 250; n1 <- 500
+x2 <- 230; n2 <- 500   # 값을 바꿔 z가 어떻게 변하는지 보세요
+
+p1_hat <- x1 / n1
+p2_hat <- x2 / n2
+p_pooled <- (x1 + x2) / (n1 + n2)               # 합동비율
+se <- sqrt(p_pooled * (1 - p_pooled) * (1/n1 + 1/n2))
+
+z <- (p1_hat - p2_hat) / se
+p_value <- 2 * pnorm(abs(z), lower.tail = FALSE)  # 양측 p-값
+
+c(z = z, p_value = p_value)
+```
+
+## 3. 표본 크기와 검정력 — 시뮬레이션
+
+진짜 차이가 $p_1 = 0.50$, $p_2 = 0.46$처럼 작을 때, 표본이 커질수록 귀무가설을 기각하기 쉬워집니다.
+
+```{webr}
+library(ggplot2)
+set.seed(2026)
+
+p1 <- 0.50; p2 <- 0.46   # 두 모비율 — 바꿔 보세요
+n  <- 300                # 집단별 표본 크기 — 100, 1000으로 바꿔 보세요
+
+x1 <- rbinom(1, n, p1)   # 이항분포로 성공 횟수 생성
+x2 <- rbinom(1, n, p2)
+
+df <- data.frame(집단 = c("집단 1", "집단 2"),
+                 비율 = c(x1/n, x2/n))
+se_each <- sqrt(df$비율 * (1 - df$비율) / n)
+
+p <- ggplot(df, aes(집단, 비율, fill = 집단)) +
+  geom_col(width = 0.5, alpha = 0.7, show.legend = FALSE) +
+  geom_errorbar(aes(ymin = 비율 - 1.96*se_each, ymax = 비율 + 1.96*se_each),
+                width = 0.15) +
+  labs(title = paste0("표본비율과 95% 신뢰구간 (n = ", n, ")"),
+       x = "집단", y = "표본비율") +
+  theme_minimal(base_size = 13) +
+  theme(text = element_text(family = "NanumGothic"))
+suppressWarnings(print(p))
+```
+
+신뢰구간이 많이 겹치면 두 비율의 차이를 확신하기 어렵습니다. `n`을 키워 구간이 좁아지는 것을 확인하세요.
+
+## 4. 연습 — 합동비율과 z 통계량
+
+### 연습 1. 합동비율 $\hat{p}$
+
+귀무가설 아래 두 집단을 합쳐 하나의 비율을 추정합니다. 빈칸을 채우세요.
+
+```{webr}
+#| exercise: ex_pooled
+x1 <- 250; n1 <- 500
+x2 <- 230; n2 <- 500
+p_pooled <- ______
+p_pooled
+```
+
+```{webr}
+#| exercise: ex_pooled
+#| check: true
+tryCatch({
+  expected <- (get("x1", envir = .envir_result) + get("x2", envir = .envir_result)) /
+              (get("n1", envir = .envir_result) + get("n2", envir = .envir_result))
+  if (isTRUE(all.equal(.result, expected))) {
+    list(correct = TRUE, message = paste0("정답! 합동비율 = (x1+x2)/(n1+n2) = ", signif(expected, 4)))
+  } else {
+    list(correct = FALSE, message = "아직 아니에요 — 두 집단의 성공 횟수 합을 표본 크기 합으로 나누세요: (x1 + x2) / (n1 + n2).")
+  }
+}, error = function(e) {
+  list(correct = FALSE, message = "x1, n1, x2, n2를 지우지 말고 p_pooled <- 빈칸만 채워 실행하세요.")
+})
+```
+
+::: { .hint exercise="ex_pooled" }
+분자는 성공 횟수의 합 `x1 + x2`, 분모는 표본 크기의 합 `n1 + n2`입니다.
+:::
+
+::: { .solution exercise="ex_pooled" }
+```r
+p_pooled <- (x1 + x2) / (n1 + n2)
+p_pooled
+```
+:::
+
+### 연습 2. 검정 통계량 $z$
+
+표준오차 `se`가 준비되어 있습니다. $z$의 분자를 완성하세요.
+
+```{webr}
+#| exercise: ex_zstat
+p1_hat <- 0.50; p2_hat <- 0.46
+n1 <- 500; n2 <- 500
+p_pooled <- 0.48
+se <- sqrt(p_pooled * (1 - p_pooled) * (1/n1 + 1/n2))
+z <- ______ / se
+z
+```
+
+```{webr}
+#| exercise: ex_zstat
+#| check: true
+tryCatch({
+  expected <- (get("p1_hat", envir = .envir_result) - get("p2_hat", envir = .envir_result)) /
+              get("se", envir = .envir_result)
+  if (isTRUE(all.equal(.result, expected))) {
+    list(correct = TRUE, message = paste0("정답! z = (p1_hat - p2_hat)/se = ", signif(expected, 4)))
+  } else {
+    list(correct = FALSE, message = "아직 아니에요 — 분자는 두 표본비율의 차이, 즉 p1_hat - p2_hat 입니다.")
+  }
+}, error = function(e) {
+  list(correct = FALSE, message = "se 계산 줄은 그대로 두고, z의 분자 빈칸만 채워 실행하세요.")
+})
+```
+
+::: { .hint exercise="ex_zstat" }
+분자는 두 표본비율의 차이입니다: `p1_hat - p2_hat`.
+:::
+
+::: { .solution exercise="ex_zstat" }
+```r
+z <- (p1_hat - p2_hat) / se
+z
+```
+:::

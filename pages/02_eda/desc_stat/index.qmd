@@ -1,0 +1,139 @@
+---
+engine: knitr
+title: "기술통계 개념 이해 — 코드 실습"
+webr:
+  packages: [ggplot2]
+---
+
+{{< include ../../../_extensions/r-wasm/live/_knitr.qmd >}}
+
+[← BitStat2 Live 홈](../../../index.qmd)
+
+1~100 사이에서 난수를 뽑아 평균 $\bar{x}$, 표준편차 $s$, 최소값·최대값을 직접 계산하고,
+그 통계량이 데이터 위에서 어디에 놓이는지 그림으로 확인합니다.
+
+## 1. 난수 추출과 요약통계
+
+`n`과 `replace`를 바꿔 가며 통계량이 어떻게 달라지는지 관찰하세요.
+표본이 커질수록 평균은 이론값(약 50.5) 근처에서 덜 흔들립니다.
+
+```{webr}
+set.seed(123)          # 재현 가능한 난수 — 바꿔 보세요
+n <- 10                # 추출할 데이터 수 — 바꿔 보세요 (1~100)
+x <- sample(1:100, n, replace = FALSE)   # replace = TRUE 로도 바꿔 보세요
+
+x
+c(평균 = mean(x), 표준편차 = sd(x), 최소값 = min(x), 최대값 = max(x))
+```
+
+## 2. 통계량을 그림 위에 올리기
+
+점(데이터) 위에 평균선과 평균 ± 1 표준편차 구간을 겹쳐 그립니다.
+`n`을 키우면 점은 많아져도 평균선의 위치는 안정됩니다.
+
+```{webr}
+set.seed(123)
+n <- 30                              # 바꿔 보세요
+x <- sample(1:100, n)
+d <- data.frame(value = x)
+m <- mean(x); s <- sd(x)
+
+library(ggplot2)
+p <- ggplot(d, aes(x = factor(1), y = value)) +
+  geom_point(size = 3, alpha = 0.6, colour = "#4a4a44") +
+  annotate("segment", x = 0.8, xend = 1.2, y = m, yend = m,
+           colour = "blue", linewidth = 1.2) +
+  geom_errorbar(aes(ymin = m - s, ymax = m + s), width = 0.15, colour = "red") +
+  coord_flip() +
+  labs(title = paste0("추출된 ", n, "개 데이터 — 평균(파랑)과 ±1 표준편차(빨강)"),
+       x = "", y = "값") +
+  theme_minimal(base_size = 13) +
+  theme(text = element_text(family = "NanumGothic"),
+        axis.text.y = element_blank(), axis.ticks.y = element_blank())
+suppressWarnings(print(p))
+```
+
+## 3. 연습 — 표준편차 직접 계산
+
+표준편차는 편차 제곱합을 $n-1$로 나눈 분산의 제곱근입니다:
+$$s = \sqrt{\frac{\sum_{i=1}^{n}(x_i - \bar{x})^2}{n-1}}$$
+
+`sd(x)`를 쓰지 말고 위 공식대로 빈칸을 채워 계산하세요.
+
+```{webr}
+#| exercise: ex_sd
+set.seed(7)
+x <- sample(1:100, 20)
+n <- length(x)
+s <- sqrt(sum((x - mean(x))^2) / ______)
+s
+```
+
+```{webr}
+#| exercise: ex_sd
+#| check: true
+tryCatch({
+  x_val <- get("x", envir = .envir_result)
+  s_expected <- sqrt(sum((x_val - mean(x_val))^2) / (length(x_val) - 1))
+  if (isTRUE(all.equal(.result, s_expected))) {
+    list(correct = TRUE,
+         message = paste0("정답! s = ", signif(s_expected, 4), " — sd(x)와 같은 값입니다."))
+  } else {
+    list(correct = FALSE,
+         message = "아직 아니에요 — 표본 분산의 분모는 n이 아니라 n - 1 (자유도)입니다.")
+  }
+}, error = function(e) {
+  list(correct = FALSE, message = "x와 n을 지우지 말고, 빈칸만 채워 실행하세요.")
+})
+```
+
+::: { .hint exercise="ex_sd" }
+표본 표준편차의 분모는 자유도, 즉 `n - 1`입니다.
+:::
+
+::: { .solution exercise="ex_sd" }
+```r
+s <- sqrt(sum((x - mean(x))^2) / (n - 1))
+s
+```
+:::
+
+## 4. 연습 — 범위(range) 계산
+
+범위는 최대값에서 최소값을 뺀 값입니다. 빈칸을 채워 계산하세요.
+
+```{webr}
+#| exercise: ex_range
+set.seed(42)
+x <- sample(1:100, 15)
+rng <- ______ - ______
+rng
+```
+
+```{webr}
+#| exercise: ex_range
+#| check: true
+tryCatch({
+  x_val <- get("x", envir = .envir_result)
+  rng_expected <- max(x_val) - min(x_val)
+  if (isTRUE(all.equal(.result, rng_expected))) {
+    list(correct = TRUE, message = paste0("정답! 범위 = 최대값 - 최소값 = ", rng_expected))
+  } else {
+    list(correct = FALSE,
+         message = "아직 아니에요 — max(x)에서 min(x)를 빼세요. 순서에 주의!")
+  }
+}, error = function(e) {
+  list(correct = FALSE, message = "x를 지우지 말고, 빈칸 두 곳만 채워 실행하세요.")
+})
+```
+
+::: { .hint exercise="ex_range" }
+`max(x)`와 `min(x)`를 사용하세요.
+:::
+
+::: { .solution exercise="ex_range" }
+```r
+rng <- max(x) - min(x)
+rng
+```
+:::

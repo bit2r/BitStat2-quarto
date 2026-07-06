@@ -1,0 +1,151 @@
+---
+engine: knitr
+title: "다변량 기술통계 — 코드 실습"
+webr:
+  packages: [ggplot2, dplyr]
+---
+
+{{< include ../../../_extensions/r-wasm/live/_knitr.qmd >}}
+
+[← BitStat2 Live 홈](../../../index.qmd)
+
+변수 하나만 볼 때는 평균·표준편차로 충분하지만, 변수가 둘 이상이면 **관계**가 핵심입니다.
+연속형 두 변수는 산점도와 상관계수로, 연속형 + 범주형 조합은 그룹별 요약통계와 상자 그림으로 살펴봅니다.
+
+## 1. 산점도와 상관계수 — 연속형 두 변수
+
+두 연속형 변수의 직선 관계 강도는 상관계수 $r$ 로 요약합니다 ($-1 \le r \le 1$).
+
+$$r = \frac{\sum_{i}(x_i-\bar{x})(y_i-\bar{y})}{\sqrt{\sum_{i}(x_i-\bar{x})^2}\sqrt{\sum_{i}(y_i-\bar{y})^2}}$$
+
+`mtcars`에서 차량 무게(`wt`)와 연비(`mpg`)의 관계를 봅니다.
+
+```{webr}
+library(ggplot2)
+
+x_var <- "wt"    # 바꿔 보세요: "hp", "disp", "qsec" 등
+y_var <- "mpg"
+
+r <- cor(mtcars[[x_var]], mtcars[[y_var]])
+cat("상관계수 r =", round(r, 3), "\n")
+
+p <- ggplot(mtcars, aes(x = .data[[x_var]], y = .data[[y_var]])) +
+  geom_point(colour = "#4a4a44", size = 2.5, alpha = .8) +
+  labs(title = paste0("산점도: ", x_var, " vs ", y_var, " (r = ", round(r, 2), ")"),
+       x = x_var, y = y_var) +
+  theme_minimal(base_size = 13) +
+  theme(text = element_text(family = "NanumGothic"))
+suppressWarnings(print(p))
+```
+
+여러 연속형 변수를 한 번에 보려면 상관계수 **행렬**을 계산합니다.
+
+```{webr}
+vars <- c("mpg", "wt", "hp")   # 변수를 추가해 보세요: "drat", "qsec" 등
+round(cor(mtcars[, vars]), 3)
+```
+
+## 2. 그룹별 기술통계와 상자 그림 — 연속형 + 범주형
+
+범주형 변수로 그룹을 나눈 뒤, 그룹마다 연속형 변수의 요약통계를 계산합니다.
+`iris`의 품종(`Species`)별 꽃받침 길이(`Sepal.Length`)를 봅니다.
+
+```{webr}
+library(dplyr)
+library(ggplot2)
+
+num_var <- "Sepal.Length"   # 바꿔 보세요: "Petal.Length", "Sepal.Width" 등
+
+iris |>
+  group_by(Species) |>
+  summarise(평균 = mean(.data[[num_var]]),
+            중앙값 = median(.data[[num_var]]),
+            표준편차 = sd(.data[[num_var]]),
+            n = n())
+
+p <- ggplot(iris, aes(x = Species, y = .data[[num_var]])) +
+  geom_boxplot(fill = "#c9c6b8", colour = "#4a4a44") +
+  labs(title = paste0("품종별 ", num_var, " 상자 그림"),
+       x = "품종", y = num_var) +
+  theme_minimal(base_size = 13) +
+  theme(text = element_text(family = "NanumGothic"))
+suppressWarnings(print(p))
+```
+
+## 3. 연습문제
+
+### 연습 1 — 상관계수 계산
+
+`cor()` 함수로 두 변수의 상관계수를 계산하세요.
+
+```{webr}
+#| exercise: ex_cor
+x <- mtcars$wt
+y <- mtcars$mpg
+r <- ______
+r
+```
+
+```{webr}
+#| exercise: ex_cor
+#| check: true
+tryCatch({
+  r_expected <- cor(get("x", envir = .envir_result), get("y", envir = .envir_result))
+  if (isTRUE(all.equal(.result, r_expected))) {
+    list(correct = TRUE, message = paste0("정답! r = ", round(r_expected, 3), " — 무게가 늘수록 연비가 줄어드는 강한 음의 상관입니다."))
+  } else {
+    list(correct = FALSE, message = "아직 아니에요 — 두 변수를 함께 받는 함수는 cor(x, y)입니다.")
+  }
+}, error = function(e) {
+  list(correct = FALSE, message = "x와 y를 지우지 말고, r <- 빈칸만 채워 실행하세요.")
+})
+```
+
+::: { .hint exercise="ex_cor" }
+상관계수 함수는 `cor()`이고, 두 벡터를 인자로 받습니다: `cor(x, y)`.
+:::
+
+::: { .solution exercise="ex_cor" }
+```r
+r <- cor(x, y)
+r
+```
+:::
+
+### 연습 2 — 그룹별 평균
+
+`tapply()`로 품종별 꽃잎 길이(`Petal.Length`)의 평균을 계산하세요. 빈칸에는 그룹을 나누는 **범주형 변수**가 들어갑니다.
+
+```{webr}
+#| exercise: ex_group_mean
+df <- iris
+grp_mean <- tapply(df$Petal.Length, df$______, mean)
+grp_mean
+```
+
+```{webr}
+#| exercise: ex_group_mean
+#| check: true
+tryCatch({
+  df0 <- get("df", envir = .envir_result)
+  expected <- tapply(df0$Petal.Length, df0$Species, mean)
+  if (isTRUE(all.equal(.result, expected))) {
+    list(correct = TRUE, message = "정답! 품종(Species)별 평균 — setosa가 가장 짧고 virginica가 가장 깁니다.")
+  } else {
+    list(correct = FALSE, message = "아직 아니에요 — 그룹을 나누는 범주형 변수는 iris의 품종 열, 즉 Species입니다.")
+  }
+}, error = function(e) {
+  list(correct = FALSE, message = "df를 지우지 말고, 빈칸에 범주형 변수 이름만 채워 실행하세요.")
+})
+```
+
+::: { .hint exercise="ex_group_mean" }
+`iris`에서 범주형 변수는 품종을 담은 `Species` 열입니다.
+:::
+
+::: { .solution exercise="ex_group_mean" }
+```r
+grp_mean <- tapply(df$Petal.Length, df$Species, mean)
+grp_mean
+```
+:::

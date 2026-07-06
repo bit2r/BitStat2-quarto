@@ -1,0 +1,151 @@
+---
+engine: knitr
+title: "연속형 분포 적합 — 코드 실습"
+webr:
+  packages: [ggplot2]
+---
+
+{{< include ../../../_extensions/r-wasm/live/_knitr.qmd >}}
+
+[← BitStat2 Live 홈](../../../index.qmd)
+
+데이터가 어떤 이론적 연속분포(정규·지수 등)를 따르는지 **히스토그램 + 밀도곡선, Q-Q 그래프, 적합도 검정**의 세 갈래로 확인합니다.
+아래 코드 셀은 직접 수정해서 실행할 수 있습니다.
+
+## 1. 히스토그램 위에 이론적 밀도곡선 겹치기
+
+정규분포의 모수는 표본으로 추정합니다: $\hat\mu = \bar{x}$, $\hat\sigma = s$.
+`faithful` 내장 데이터의 간헐천 분출 대기시간에 정규분포를 적합해 봅니다.
+
+```{webr}
+library(ggplot2)
+
+x  <- faithful$waiting     # faithful$eruptions 로 바꿔 보세요
+mu <- mean(x)
+s  <- sd(x)
+
+p <- ggplot(data.frame(x), aes(x)) +
+  geom_histogram(aes(y = after_stat(density)),
+                 bins = 20,               # 구간 수 — 바꿔 보세요
+                 fill = "#4a4a44", alpha = .4) +
+  stat_function(fun = dnorm, args = list(mean = mu, sd = s),
+                color = "#8a1500", linewidth = 1) +
+  labs(title = "간헐천 대기시간과 정규분포 적합",
+       x = "분출 대기시간(분)", y = "밀도") +
+  theme_minimal(base_size = 13) +
+  theme(text = element_text(family = "NanumGothic"))
+suppressWarnings(print(p))
+```
+
+밀도곡선이 히스토그램의 봉우리를 잘 따라가는지 보세요. `faithful$waiting`은 봉우리가 두 개라 정규분포 하나로는 잘 안 맞습니다.
+
+## 2. Q-Q 그래프와 정규성 검정
+
+Q-Q 그래프에서 점이 직선 위에 놓이면 해당 분포에 잘 맞는다는 뜻입니다.
+Shapiro-Wilk 검정의 p-값이 0.05보다 작으면 "정규분포"라는 귀무가설을 기각합니다.
+
+```{webr}
+library(ggplot2)
+
+set.seed(123)
+x <- rnorm(100, mean = 50, sd = 10)   # rexp(100, rate = 0.1) 로 바꿔 보세요
+
+p <- ggplot(data.frame(x), aes(sample = x)) +
+  stat_qq(color = "#4a4a44") +
+  stat_qq_line(color = "#8a1500", linewidth = 1) +
+  labs(title = "정규 Q-Q 그래프",
+       x = "이론적 분위수", y = "표본 분위수") +
+  theme_minimal(base_size = 13) +
+  theme(text = element_text(family = "NanumGothic"))
+suppressWarnings(print(p))
+
+shapiro.test(x)
+```
+
+데이터를 지수분포 난수로 바꾸면 꼬리 쪽 점들이 직선에서 크게 벗어나고 p-값이 급락하는 것을 확인하세요.
+
+## 3. 연습 — 지수분포 모수 추정과 적합도 검정
+
+지수분포의 rate 모수 $\lambda$의 적률 추정량은 표본평균의 역수, $\hat\lambda = 1/\bar{x}$ 입니다.
+
+### 연습 1: rate 추정 — 아래 빈칸을 채워 $\hat\lambda$를 계산하세요.
+
+```{webr}
+#| exercise: ex_rate
+set.seed(7)
+x <- rexp(200, rate = 2)
+rate_hat <- ______
+rate_hat
+```
+
+```{webr}
+#| exercise: ex_rate
+#| check: true
+tryCatch({
+  rate_expected <- 1 / mean(get("x", envir = .envir_result))
+  if (isTRUE(all.equal(.result, rate_expected))) {
+    list(correct = TRUE,
+         message = paste0("정답! rate_hat = 1/mean(x) = ", signif(rate_expected, 4),
+                          " — 참값 2에 가깝습니다."))
+  } else {
+    list(correct = FALSE,
+         message = "아직 아니에요 — 지수분포 rate의 추정량은 표본평균의 역수, 즉 1/mean(x)입니다.")
+  }
+}, error = function(e) {
+  list(correct = FALSE, message = "x를 지우지 말고 rate_hat <- 빈칸만 채워 실행하세요.")
+})
+```
+
+::: { .hint exercise="ex_rate" }
+표본평균은 `mean(x)`이고, rate 추정량은 그 **역수**입니다.
+:::
+
+::: { .solution exercise="ex_rate" }
+```r
+rate_hat <- 1 / mean(x)
+rate_hat
+```
+:::
+
+### 연습 2: Kolmogorov-Smirnov 검정의 p-값
+
+추정한 rate로 지수분포 적합도를 `ks.test()`로 검정하고, 결과에서 **p-값**을 꺼내세요.
+
+```{webr}
+#| exercise: ex_ks
+set.seed(7)
+x <- rexp(200, rate = 2)
+ks_out <- ks.test(x, "pexp", rate = 1 / mean(x))
+pval <- ks_out$______
+pval
+```
+
+```{webr}
+#| exercise: ex_ks
+#| check: true
+tryCatch({
+  x_in <- get("x", envir = .envir_result)
+  pval_expected <- ks.test(x_in, "pexp", rate = 1 / mean(x_in))$p.value
+  if (isTRUE(all.equal(.result, pval_expected))) {
+    list(correct = TRUE,
+         message = paste0("정답! p-값 = ", signif(pval_expected, 4),
+                          " — 0.05보다 크므로 지수분포 적합을 기각하지 않습니다."))
+  } else {
+    list(correct = FALSE,
+         message = "아직 아니에요 — 검정 결과 리스트에서 p-값 성분의 이름은 p.value 입니다.")
+  }
+}, error = function(e) {
+  list(correct = FALSE, message = "앞부분은 그대로 두고 ks_out$ 뒤의 빈칸만 채워 실행하세요.")
+})
+```
+
+::: { .hint exercise="ex_ks" }
+`ks.test()`의 반환값은 리스트이고, p-값 성분 이름은 `p.value`입니다: `ks_out$p.value`.
+:::
+
+::: { .solution exercise="ex_ks" }
+```r
+pval <- ks_out$p.value
+pval
+```
+:::

@@ -1,0 +1,167 @@
+---
+engine: knitr
+title: "워드 클라우드 — 코드 실습"
+webr:
+  packages: [ggplot2]
+---
+
+{{< include ../../../_extensions/r-wasm/live/_knitr.qmd >}}
+
+[← BitStat2 Live 홈](../../../index.qmd)
+
+워드 클라우드의 핵심은 **단어 빈도**입니다: 텍스트를 단어로 쪼개고, 세고, 빈도에 비례한 크기로 그립니다.
+이 세 단계를 base R의 `strsplit()` · `table()`과 ggplot2만으로 직접 만들어 봅니다.
+
+## 1. 텍스트를 단어로 쪼개고 세기
+
+텍스트 분석의 출발점은 **토큰화**(공백 기준으로 단어 나누기)와 **빈도표**입니다.
+
+```{webr}
+text <- "데이터 분석은 질문에서 시작한다 데이터 를 모으고 데이터 를 정리하고
+통계 로 요약한다 분석 결과는 다시 질문 을 낳고 통계 는 그 답을 돕는다
+분석 과 통계 는 데이터 과학의 두 기둥이다"
+
+words <- unlist(strsplit(text, "\\s+"))   # 공백 기준 토큰화
+words <- words[nchar(words) > 1]          # 한 글자 단어(조사) 제거 — 1을 2로 바꿔 보세요
+freq  <- sort(table(words), decreasing = TRUE)
+head(freq, 8)                             # 8을 다른 수로 바꿔 보세요
+```
+
+빈도표에서 조사·한 글자 단어를 걸러내는 것이 실제 워드 클라우드 앱의 "불용어 제거"에 해당합니다.
+
+## 2. 빈도 막대그래프
+
+크기 비교가 목적이라면 워드 클라우드보다 **막대그래프**가 더 정확하게 읽힙니다.
+
+```{webr}
+library(ggplot2)
+
+text  <- "데이터 분석은 질문에서 시작한다 데이터 를 모으고 데이터 를 정리하고
+통계 로 요약한다 분석 결과는 다시 질문 을 낳고 통계 는 그 답을 돕는다
+분석 과 통계 는 데이터 과학의 두 기둥이다"
+words <- unlist(strsplit(text, "\\s+"))
+words <- words[nchar(words) > 1]
+freq  <- sort(table(words), decreasing = TRUE)
+
+top_k <- 6                                 # 상위 몇 단어? — 바꿔 보세요
+df <- data.frame(word = names(freq)[1:top_k],
+                 n    = as.integer(freq[1:top_k]))
+
+p <- ggplot(df, aes(x = reorder(word, n), y = n)) +
+  geom_col(fill = "#4a4a44", alpha = 0.8) +
+  coord_flip() +
+  labs(title = "단어 빈도 상위 단어", x = "단어", y = "빈도") +
+  theme_minimal(base_size = 13) +
+  theme(text = element_text(family = "NanumGothic"))
+suppressWarnings(print(p))
+```
+
+## 3. ggplot2로 만드는 미니 워드 클라우드
+
+전용 패키지 없이도 `geom_text()`에 **크기를 빈도에 비례**시키고 위치를 난수로 흩뿌리면
+워드 클라우드의 원리를 그대로 재현할 수 있습니다.
+
+```{webr}
+library(ggplot2)
+
+text  <- "데이터 분석은 질문에서 시작한다 데이터 를 모으고 데이터 를 정리하고
+통계 로 요약한다 분석 결과는 다시 질문 을 낳고 통계 는 그 답을 돕는다
+분석 과 통계 는 데이터 과학의 두 기둥이다"
+words <- unlist(strsplit(text, "\\s+"))
+words <- words[nchar(words) > 1]
+freq  <- sort(table(words), decreasing = TRUE)
+
+set.seed(42)                               # 씨앗을 바꾸면 배치가 달라집니다 — 바꿔 보세요
+df <- data.frame(word = names(freq),
+                 n    = as.integer(freq),
+                 x    = runif(length(freq)),
+                 y    = runif(length(freq)))
+
+p <- ggplot(df, aes(x, y, label = word, size = n, colour = n)) +
+  geom_text(family = "NanumGothic", show.legend = FALSE) +
+  scale_size(range = c(4, 14)) +           # 최대 글자 크기 14 — 바꿔 보세요
+  scale_colour_gradient(low = "#8a8578", high = "#8a1500") +
+  labs(title = "미니 워드 클라우드 (빈도 ∝ 글자 크기)", x = NULL, y = NULL) +
+  theme_minimal(base_size = 13) +
+  theme(text = element_text(family = "NanumGothic"),
+        axis.text = element_blank(), panel.grid = element_blank())
+suppressWarnings(print(p))
+```
+
+## 4. 연습 — 최빈 단어 찾기
+
+빈도표 `freq`에서 가장 자주 나온 단어를 꺼내려면 `which.max()`에 무엇을 넣어야 할까요? 빈칸을 채워 실행하세요.
+
+```{webr}
+#| exercise: ex_topword
+words <- c("데이터", "분석", "데이터", "통계", "분석", "데이터")
+freq  <- table(words)
+most  <- names(freq)[which.max(______)]
+most
+```
+
+```{webr}
+#| exercise: ex_topword
+#| check: true
+tryCatch({
+  freq_expected <- table(get("words", envir = .envir_result))
+  most_expected <- names(freq_expected)[which.max(freq_expected)]
+  if (isTRUE(all.equal(.result, most_expected))) {
+    list(correct = TRUE, message = paste0("정답! 최빈 단어는 '", most_expected, "' 입니다."))
+  } else {
+    list(correct = FALSE, message = "아직 아니에요 — which.max()에는 빈도표 자체, 즉 freq를 넣어야 합니다.")
+  }
+}, error = function(e) {
+  list(correct = FALSE, message = "words와 freq는 그대로 두고, which.max(______)의 빈칸만 채워 실행하세요.")
+})
+```
+
+::: { .hint exercise="ex_topword" }
+`which.max()`는 벡터에서 최댓값의 위치를 돌려줍니다. 여기서 최댓값을 찾을 벡터는 빈도표 `freq`입니다.
+:::
+
+::: { .solution exercise="ex_topword" }
+```r
+most <- names(freq)[which.max(freq)]
+most
+```
+:::
+
+## 5. 연습 — 최소 빈도 필터
+
+워드 클라우드 앱의 "최소 빈도" 슬라이더처럼, 2번 이상 나온 단어만 남기세요.
+
+```{webr}
+#| exercise: ex_minfreq
+words <- c("데이터", "분석", "데이터", "통계", "분석", "데이터", "시각화")
+freq  <- table(words)
+keep  <- freq[______ >= 2]
+keep
+```
+
+```{webr}
+#| exercise: ex_minfreq
+#| check: true
+tryCatch({
+  freq_expected <- table(get("words", envir = .envir_result))
+  keep_expected <- freq_expected[freq_expected >= 2]
+  if (isTRUE(all.equal(.result, keep_expected))) {
+    list(correct = TRUE, message = paste0("정답! ", length(keep_expected), "개 단어가 최소 빈도 2를 넘습니다."))
+  } else {
+    list(correct = FALSE, message = "아직 아니에요 — 빈도표 freq를 자기 자신과 비교해 걸러야 합니다: freq[freq >= 2].")
+  }
+}, error = function(e) {
+  list(correct = FALSE, message = "words와 freq는 그대로 두고, 대괄호 안 빈칸에 빈도 벡터 이름을 넣어 실행하세요.")
+})
+```
+
+::: { .hint exercise="ex_minfreq" }
+논리 인덱싱을 씁니다: 빈도표를 자기 자신의 조건으로 걸러 보세요. `freq[freq >= 2]` 꼴입니다.
+:::
+
+::: { .solution exercise="ex_minfreq" }
+```r
+keep <- freq[freq >= 2]
+keep
+```
+:::

@@ -1,0 +1,149 @@
+---
+engine: knitr
+title: "x-점수 확률계산 — 코드 실습"
+webr:
+  packages: [ggplot2]
+---
+
+{{< include ../../../_extensions/r-wasm/live/_knitr.qmd >}}
+
+[← BitStat2 Live 홈](../../../index.qmd)
+
+z-점수·t-점수·카이제곱-점수는 가설 검정과 신뢰구간 계산의 기초 재료입니다.
+아래 셀에서 점수와 자유도를 직접 바꿔 실행하며 $P(X \leq x)$ 누적 확률이 어떻게 달라지는지 확인하세요.
+
+## 1. z-점수 → 누적 확률과 신뢰수준
+
+표준정규분포에서 `pnorm(z)`는 $P(Z \leq z)$를, `qnorm(p)`는 그 역함수(분위수)를 계산합니다.
+양측 신뢰수준은 $1 - 2\{1 - P(Z \leq |z|)\}$ 입니다.
+
+```{webr}
+z <- 1.96                     # z-점수 — 바꿔 보세요 (예: 1.64, 2.58)
+
+prob <- pnorm(z)              # P(Z <= z)
+conf <- 1 - 2 * (1 - pnorm(abs(z)))   # 양측 신뢰수준
+
+cat("P(Z <=", z, ") =", round(prob, 4), "\n")
+cat("양측 신뢰수준:", round(conf * 100, 2), "%\n")
+cat("역으로 확인 — qnorm(", round(1 - (1 - conf)/2, 4), ") =",
+    round(qnorm(1 - (1 - conf)/2), 2), "\n")
+```
+
+## 2. t-점수와 카이제곱-점수
+
+표본이 작거나 모표준편차를 모르면 t 분포(`pt`, `qt`)를, 범주형 자료의 적합도·독립성 검정에는
+카이제곱 분포(`pchisq`, `qchisq`)를 씁니다. 두 분포 모두 **자유도(df)** 가 모양을 결정합니다.
+
+```{webr}
+t_score  <- 2.262             # t-점수 — 바꿔 보세요
+df_t     <- 10                # t 분포 자유도 — 바꿔 보세요 (커질수록 정규분포에 접근)
+cat("P(T <=", t_score, ") =", round(pt(t_score, df = df_t), 4), "\n")
+
+chisq_score <- 3.84           # 카이제곱-점수 — 바꿔 보세요
+df_chisq    <- 1              # 카이제곱 자유도 — 바꿔 보세요
+cat("P(X² <=", chisq_score, ") =",
+    round(pchisq(chisq_score, df = df_chisq), 4), "\n")
+```
+
+## 3. 누적 확률을 그림으로 확인
+
+z-점수 왼쪽 면적이 곧 `pnorm(z)`입니다. `z` 값을 바꿔 색칠된 면적이 변하는 것을 보세요.
+
+```{webr}
+library(ggplot2)
+
+z <- 1.96                     # 기준 z-점수 — 바꿔 보세요
+xs <- seq(-4, 4, length.out = 400)
+dens <- data.frame(x = xs, y = dnorm(xs))
+
+p <- ggplot(dens, aes(x, y)) +
+  geom_area(data = subset(dens, x <= z), fill = "#76BED0", alpha = 0.6) +
+  geom_line(linewidth = 1, colour = "#3B429F") +
+  geom_vline(xintercept = z, linetype = 2, colour = "#F55D3E") +
+  labs(title = paste0("표준정규분포: P(Z ≤ ", z, ") = ", round(pnorm(z), 4)),
+       x = "z-점수", y = "밀도") +
+  theme_minimal(base_size = 13) +
+  theme(text = element_text(family = "NanumGothic"))
+suppressWarnings(print(p))
+```
+
+## 4. 연습 — 양측 신뢰수준 계산
+
+$z = 2.58$ 의 양측 신뢰수준 $1 - 2\{1 - P(Z \leq |z|)\}$ 을 계산하세요.
+
+```{webr}
+#| exercise: ex_conf_z
+z <- 2.58
+conf <- ______
+conf
+```
+
+```{webr}
+#| exercise: ex_conf_z
+#| check: true
+tryCatch({
+  conf_expected <- 1 - 2 * (1 - pnorm(abs(get("z", envir = .envir_result))))
+  if (isTRUE(all.equal(.result, conf_expected))) {
+    list(correct = TRUE,
+         message = paste0("정답! z = 2.58 의 양측 신뢰수준 = ",
+                          round(conf_expected * 100, 2), "%"))
+  } else {
+    list(correct = FALSE,
+         message = "아직 아니에요 — pnorm(abs(z))로 왼쪽 누적 확률을 구한 뒤, 1 - 2*(1 - 그 값) 형태로 계산하세요.")
+  }
+}, error = function(e) {
+  list(correct = FALSE, message = "z를 지우지 말고, conf <- 빈칸만 채워 실행하세요.")
+})
+```
+
+::: { .hint exercise="ex_conf_z" }
+왼쪽 누적 확률은 `pnorm(abs(z))`입니다. 양측 신뢰수준은 `1 - 2 * (1 - pnorm(abs(z)))`.
+:::
+
+::: { .solution exercise="ex_conf_z" }
+```r
+conf <- 1 - 2 * (1 - pnorm(abs(z)))
+conf
+```
+:::
+
+## 5. 연습 — t 임계값 구하기
+
+자유도 10인 t 분포에서 **95% 양측 신뢰구간**의 임계값, 즉 $P(T \leq t) = 0.975$ 를 만족하는
+t-점수를 구하세요.
+
+```{webr}
+#| exercise: ex_t_crit
+df_t <- 10
+t_crit <- ______
+t_crit
+```
+
+```{webr}
+#| exercise: ex_t_crit
+#| check: true
+tryCatch({
+  t_expected <- qt(0.975, df = get("df_t", envir = .envir_result))
+  if (isTRUE(all.equal(.result, t_expected))) {
+    list(correct = TRUE,
+         message = paste0("정답! qt(0.975, df = 10) = ", round(t_expected, 3),
+                          " — 같은 조건의 z 임계값 1.96보다 큽니다."))
+  } else {
+    list(correct = FALSE,
+         message = "아직 아니에요 — 분위수 함수 qt()에 확률 0.975와 자유도 df_t를 넣으세요.")
+  }
+}, error = function(e) {
+  list(correct = FALSE, message = "df_t를 지우지 말고, t_crit <- 빈칸만 채워 실행하세요.")
+})
+```
+
+::: { .hint exercise="ex_t_crit" }
+누적 확률에서 점수로 되돌리는 함수는 `qt(p, df)`입니다. 여기서는 `p = 0.975`.
+:::
+
+::: { .solution exercise="ex_t_crit" }
+```r
+t_crit <- qt(0.975, df = df_t)
+t_crit
+```
+:::

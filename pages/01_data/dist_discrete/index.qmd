@@ -1,0 +1,122 @@
+---
+engine: knitr
+title: "이산형 분포 — 코드 실습"
+webr:
+  packages: [ggplot2]
+---
+
+{{< include ../../../_extensions/r-wasm/live/_knitr.qmd >}}
+
+[← BitStat2 Live 홈](../../../index.qmd)
+
+동전 던지기의 성공 횟수, 한 시간 동안 걸려오는 전화 수처럼 **셀 수 있는 값**을 갖는 확률변수는 이산형 분포를 따릅니다.
+대표적인 이항 분포와 포아송 분포를 R의 `d*`(확률질량함수), `p*`(누적분포함수), `r*`(난수 생성) 함수로 직접 다뤄 봅니다.
+
+## 1. 이항 분포 — PMF 그려 보기
+
+이항 분포 $X \sim B(n, p)$의 확률질량함수는
+
+$$P(X = x) = \binom{n}{x} p^x (1-p)^{n-x}, \quad x = 0, 1, \dots, n$$
+
+`dbinom()`으로 각 $x$의 확률을 계산해 막대그래프로 그립니다. 모수를 바꾸면 분포 모양이 어떻게 달라지는지 확인하세요.
+
+```{webr}
+library(ggplot2)
+
+n <- 10    # 시행 횟수 — 바꿔 보세요 (예: 20, 50)
+p <- 0.4   # 성공 확률 — 바꿔 보세요 (예: 0.1, 0.5, 0.9)
+
+df <- data.frame(x = 0:n)
+df$pmf <- dbinom(df$x, size = n, prob = p)
+
+p_plot <- ggplot(df, aes(x = factor(x), y = pmf)) +
+  geom_col(fill = "#4a4a44", alpha = .8) +
+  labs(title = paste0("이항 분포 B(", n, ", ", p, ")의 확률질량함수"),
+       x = "성공 횟수 x", y = "확률 P(X = x)") +
+  theme_minimal(base_size = 13) +
+  theme(text = element_text(family = "NanumGothic"))
+suppressWarnings(print(p_plot))
+```
+
+이론적 평균은 $np$, 분산은 $np(1-p)$ 입니다. 난수를 뽑아 이론값과 비교해 봅시다.
+
+```{webr}
+set.seed(123)
+n <- 10
+p <- 0.4
+x <- rbinom(5000, size = n, prob = p)   # 표본 수 5000 — 바꿔 보세요
+
+c(이론_평균 = n * p,       표본_평균 = mean(x),
+  이론_분산 = n * p * (1 - p), 표본_분산 = var(x))
+```
+
+## 2. 포아송 분포 — 드문 사건의 횟수
+
+단위 시간당 평균 $\lambda$번 일어나는 사건의 발생 횟수는 포아송 분포 $X \sim \text{Pois}(\lambda)$를 따릅니다:
+
+$$P(X = x) = \frac{e^{-\lambda} \lambda^x}{x!}, \quad x = 0, 1, 2, \dots$$
+
+$\lambda$를 키우면 분포가 오른쪽으로 이동하며 점점 대칭(정규분포 모양)에 가까워집니다.
+
+```{webr}
+library(ggplot2)
+
+lambda <- 3   # 평균 발생 횟수 λ — 바꿔 보세요 (예: 1, 5, 10)
+x_max  <- 15  # x축 범위 — λ를 키우면 함께 늘리세요
+
+df <- data.frame(x = 0:x_max)
+df$pmf <- dpois(df$x, lambda = lambda)
+
+p_plot <- ggplot(df, aes(x = factor(x), y = pmf)) +
+  geom_col(fill = "#8a1500", alpha = .7) +
+  labs(title = paste0("포아송 분포 Pois(", lambda, ")의 확률질량함수"),
+       x = "발생 횟수 x", y = "확률 P(X = x)") +
+  theme_minimal(base_size = 13) +
+  theme(text = element_text(family = "NanumGothic"))
+suppressWarnings(print(p_plot))
+```
+
+## 3. 연습 — 누적확률 계산
+
+이항 분포 $B(10,\ 0.4)$에서 성공이 **3번 이하**일 확률 $P(X \le 3)$을 구하세요.
+누적분포함수 `pbinom(q, size, prob)`을 사용합니다.
+
+```{webr}
+#| exercise: ex_pbinom
+n <- 10
+p <- 0.4
+prob_le3 <- ______(3, size = n, prob = p)
+prob_le3
+```
+
+```{webr}
+#| exercise: ex_pbinom
+#| check: true
+tryCatch({
+  expected <- pbinom(3, size = get("n", envir = .envir_result),
+                        prob = get("p", envir = .envir_result))
+  if (isTRUE(all.equal(.result, expected))) {
+    list(correct = TRUE,
+         message = paste0("정답! P(X ≤ 3) = ", signif(expected, 4),
+                          " — 누적확률은 pbinom()입니다."))
+  } else {
+    list(correct = FALSE,
+         message = "아직 아니에요 — dbinom()은 P(X = x) 하나만 줍니다. '이하' 확률은 누적분포함수 pbinom()을 쓰세요.")
+  }
+}, error = function(e) {
+  list(correct = FALSE, message = "n과 p는 그대로 두고, ______ 자리에 함수 이름만 채워 실행하세요.")
+})
+```
+
+::: { .hint exercise="ex_pbinom" }
+`d`로 시작하면 확률질량함수, `p`로 시작하면 누적분포함수입니다. "3 이하"는 누적이므로 `pbinom(3, size = n, prob = p)`.
+:::
+
+::: { .solution exercise="ex_pbinom" }
+```r
+prob_le3 <- pbinom(3, size = n, prob = p)
+prob_le3
+```
+
+같은 값을 `sum(dbinom(0:3, size = n, prob = p))`로도 얻을 수 있습니다 — 누적확률은 개별 확률의 합입니다.
+:::

@@ -1,0 +1,149 @@
+---
+engine: knitr
+title: "군집분석 — 코드 실습"
+webr:
+  packages: [ggplot2]
+---
+
+{{< include ../../../_extensions/r-wasm/live/_knitr.qmd >}}
+
+[← BitStat2 Live 홈](../../../index.qmd)
+
+군집분석(clustering)은 정답 라벨 없이 **서로 비슷한 관측점끼리 그룹으로 묶는** 비지도 학습 기법입니다. 대표 알고리즘인 K-평균은 군집 개수 $k$를 정하면, 각 점을 가장 가까운 중심에 배정하고 중심을 다시 계산하는 과정을 반복합니다.
+
+## 1. K-평균 첫걸음 — iris 꽃잎 데이터
+
+변수 단위가 다르면 거리 계산이 왜곡되므로 먼저 `scale()`로 표준화합니다. `k` 값을 바꿔 군집이 어떻게 달라지는지 관찰하세요. `X` 표시가 각 군집의 중심입니다.
+
+```{webr}
+library(ggplot2)
+
+set.seed(123)
+k <- 3          # 군집 개수 — 바꿔 보세요 (2, 4, 5 ...)
+
+d <- scale(iris[, c("Petal.Length", "Petal.Width")])
+km <- kmeans(d, centers = k, nstart = 10)
+
+df <- data.frame(d, 군집 = factor(km$cluster))
+centers <- data.frame(km$centers)
+
+p <- ggplot(df, aes(Petal.Length, Petal.Width, color = 군집)) +
+  geom_point(size = 2, alpha = 0.8) +
+  geom_point(data = centers, aes(Petal.Length, Petal.Width),
+             inherit.aes = FALSE, shape = 4, size = 5, stroke = 1.5) +
+  labs(title = paste0("K-평균 군집분석 (k = ", k, ")"),
+       x = "꽃잎 길이 (표준화)", y = "꽃잎 너비 (표준화)") +
+  theme_minimal(base_size = 13) +
+  theme(text = element_text(family = "NanumGothic"))
+suppressWarnings(print(p))
+```
+
+## 2. 몇 개의 군집이 적당할까? — 팔꿈치 방법
+
+K-평균의 품질은 **총 군집 내 제곱합**(`tot.withinss`)으로 잽니다. $k$를 늘리면 항상 줄어들지만, 감소가 급격히 완만해지는 "팔꿈치" 지점이 적정 $k$의 후보입니다.
+
+```{webr}
+library(ggplot2)
+
+set.seed(42)
+k_max <- 8      # 시험할 최대 군집 수 — 바꿔 보세요
+d <- scale(faithful)   # 간헐천 분출 데이터 (분출시간 · 대기시간)
+
+wss <- sapply(1:k_max, function(k)
+  kmeans(d, centers = k, nstart = 10)$tot.withinss)
+
+p <- ggplot(data.frame(k = 1:k_max, wss = wss), aes(k, wss)) +
+  geom_line(color = "#4a4a44") +
+  geom_point(size = 3, color = "#8a1500") +
+  scale_x_continuous(breaks = 1:k_max) +
+  labs(title = "팔꿈치 방법: k에 따른 총 군집 내 제곱합",
+       x = "군집 개수 k", y = "총 군집 내 제곱합 (WSS)") +
+  theme_minimal(base_size = 13) +
+  theme(text = element_text(family = "NanumGothic"))
+suppressWarnings(print(p))
+```
+
+`faithful` 데이터는 $k = 2$ 부근에서 꺾입니다 — 실제로 간헐천 분출은 "짧고 잦은" 유형과 "길고 뜸한" 유형 두 그룹으로 나뉩니다.
+
+## 3. 연습 — 직접 군집화해 보기
+
+### 연습 1: 두 개의 군집 찾기
+
+`faithful` 데이터를 표준화한 뒤 K-평균으로 **2개**의 군집을 찾고, 군집별 관측 수를 출력하세요.
+
+```{webr}
+#| exercise: ex_k2
+set.seed(123)
+d <- scale(faithful)
+km <- kmeans(d, centers = ______, nstart = 10)
+km$size
+```
+
+```{webr}
+#| exercise: ex_k2
+#| check: true
+tryCatch({
+  km_user <- get("km", envir = .envir_result)
+  set.seed(123)
+  km_expected <- kmeans(scale(faithful), centers = 2, nstart = 10)
+  if (length(km_user$size) == 2 &&
+      isTRUE(all.equal(sort(.result), sort(km_expected$size)))) {
+    list(correct = TRUE,
+         message = paste0("정답! 두 군집의 크기는 ",
+                          paste(sort(km_expected$size), collapse = ", "), "입니다."))
+  } else {
+    list(correct = FALSE, message = "아직 아니에요 — 간헐천 분출은 두 유형이었죠. centers에 2를 넣으세요.")
+  }
+}, error = function(e) {
+  list(correct = FALSE, message = "set.seed와 km 정의를 지우지 말고, centers = 빈칸만 채워 실행하세요.")
+})
+```
+
+::: { .hint exercise="ex_k2" }
+2절의 팔꿈치 그림에서 꺾이는 지점이 힌트입니다: `centers = 2`.
+:::
+
+::: { .solution exercise="ex_k2" }
+```r
+km <- kmeans(d, centers = 2, nstart = 10)
+km$size
+```
+:::
+
+### 연습 2: 총 군집 내 제곱합 꺼내기
+
+`kmeans` 결과 객체에서 팔꿈치 방법에 쓰는 **총 군집 내 제곱합**을 꺼내세요.
+
+```{webr}
+#| exercise: ex_wss
+set.seed(42)
+km3 <- kmeans(scale(iris[, 1:4]), centers = 3, nstart = 10)
+wss <- ______   # km3에서 총 군집 내 제곱합을 꺼내세요
+wss
+```
+
+```{webr}
+#| exercise: ex_wss
+#| check: true
+tryCatch({
+  wss_expected <- get("km3", envir = .envir_result)$tot.withinss
+  if (isTRUE(all.equal(.result, wss_expected))) {
+    list(correct = TRUE, message = paste0("정답! tot.withinss = ", signif(wss_expected, 5)))
+  } else {
+    list(correct = FALSE, message = "아직 아니에요 — kmeans 결과의 성분 이름은 tot.withinss입니다. `$`로 접근하세요.")
+  }
+}, error = function(e) {
+  list(correct = FALSE, message = "km3 정의를 지우지 말고, wss <- 빈칸만 채워 실행하세요.")
+})
+```
+
+::: { .hint exercise="ex_wss" }
+`kmeans()` 결과는 리스트입니다. `km3$tot.withinss`처럼 `$`로 성분을 꺼냅니다.
+:::
+
+::: { .solution exercise="ex_wss" }
+```r
+wss <- km3$tot.withinss
+wss
+```
+:::

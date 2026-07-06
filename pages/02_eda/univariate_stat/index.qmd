@@ -1,0 +1,145 @@
+---
+engine: knitr
+title: "단변량 기술통계 — 코드 실습"
+webr:
+  packages: [ggplot2]
+---
+
+{{< include ../../../_extensions/r-wasm/live/_knitr.qmd >}}
+
+[← BitStat2 Live 홈](../../../index.qmd)
+
+변수 하나를 요약하는 것이 기술통계의 출발점입니다. 변수가 **연속형**이면 평균·중앙값·표준편차 같은 수치 요약과 히스토그램·상자그림을, **범주형**이면 빈도표와 막대그래프를 사용합니다.
+
+## 1. 연속형 변수 — 수치 요약
+
+`faithful` 데이터의 간헐천 대기시간(`waiting`)을 요약해 봅시다. 평균과 중앙값이 다르면 분포가 한쪽으로 치우쳤다는 신호입니다.
+
+```{webr}
+x <- faithful$waiting   # faithful$eruptions 로 바꿔 보세요
+
+summary(x)              # 최솟값·사분위수·중앙값·평균·최댓값
+c(평균 = mean(x), 중앙값 = median(x),
+  표준편차 = sd(x), IQR = IQR(x))
+```
+
+표준편차 $s$는 관측값이 평균에서 평균적으로 얼마나 떨어져 있는지 나타냅니다:
+
+$$s = \sqrt{\frac{1}{n-1}\sum_{i=1}^{n}(x_i - \bar{x})^2}$$
+
+## 2. 연속형 변수 — 히스토그램과 상자그림
+
+같은 변수를 그림으로 봅시다. `bins` 값을 바꾸면 분포의 모양이 어떻게 달리 보이는지 확인하세요.
+
+```{webr}
+library(ggplot2)
+
+p <- ggplot(faithful, aes(x = waiting)) +
+  geom_histogram(bins = 20, fill = "#4a4a44", alpha = .6,  # bins를 5, 50으로 바꿔 보세요
+                 color = "white") +
+  labs(title = "간헐천 대기시간의 분포",
+       x = "대기시간 (분)", y = "빈도") +
+  theme_minimal(base_size = 13) +
+  theme(text = element_text(family = "NanumGothic"))
+suppressWarnings(print(p))
+```
+
+```{webr}
+library(ggplot2)
+
+p <- ggplot(faithful, aes(x = "", y = waiting)) +
+  geom_boxplot(fill = "#c9c6b8", width = .3) +
+  geom_jitter(width = .08, alpha = .3, size = 1) +      # 점을 지워 보세요
+  labs(title = "대기시간 상자그림", x = "", y = "대기시간 (분)") +
+  theme_minimal(base_size = 13) +
+  theme(text = element_text(family = "NanumGothic"))
+suppressWarnings(print(p))
+```
+
+## 3. 범주형 변수 — 빈도와 비율
+
+`mtcars`의 실린더 수(`cyl`)는 4·6·8 세 범주뿐이므로 범주형으로 다룹니다. 빈도표(`table`)와 비율표(`prop.table`)가 기본 도구입니다.
+
+```{webr}
+cyl <- factor(mtcars$cyl)     # mtcars$gear 로 바꿔 보세요
+freq <- table(cyl)
+freq                          # 범주별 빈도
+round(prop.table(freq), 3)    # 범주별 비율 (합 = 1)
+```
+
+## 4. 연습 — 중앙값 구하기
+
+`mtcars`의 연비(`mpg`)에서 **중앙값**을 구하는 빈칸을 채우세요.
+
+```{webr}
+#| exercise: ex_median
+x <- mtcars$mpg
+med <- ______(x)
+med
+```
+
+```{webr}
+#| exercise: ex_median
+#| check: true
+tryCatch({
+  med_expected <- median(get("x", envir = .envir_result))
+  if (isTRUE(all.equal(.result, med_expected))) {
+    list(correct = TRUE, message = paste0("정답! 중앙값 = ", med_expected,
+      " — 자료를 크기순으로 세웠을 때 한가운데 값입니다."))
+  } else {
+    list(correct = FALSE, message = "아직 아니에요 — 평균(mean)이 아니라 가운데 값을 주는 함수, median()을 써 보세요.")
+  }
+}, error = function(e) {
+  list(correct = FALSE, message = "x <- mtcars$mpg 줄은 그대로 두고, ______ 자리만 함수 이름으로 채워 실행하세요.")
+})
+```
+
+::: { .hint exercise="ex_median" }
+중앙값을 구하는 R 함수 이름은 영어 그대로 `median` 입니다.
+:::
+
+::: { .solution exercise="ex_median" }
+```r
+x <- mtcars$mpg
+med <- median(x)
+med
+```
+:::
+
+## 5. 연습 — 비율표 만들기
+
+빈도표 `freq`를 **비율표**로 바꾸는 빈칸을 채우세요. 비율의 합은 1이 되어야 합니다.
+
+```{webr}
+#| exercise: ex_prop
+freq <- table(mtcars$cyl)
+prop <- ______
+prop
+```
+
+```{webr}
+#| exercise: ex_prop
+#| check: true
+tryCatch({
+  prop_expected <- prop.table(get("freq", envir = .envir_result))
+  if (isTRUE(all.equal(.result, prop_expected))) {
+    list(correct = TRUE, message = "정답! prop.table(freq)은 각 빈도를 전체 합으로 나눈 비율표입니다.")
+  } else {
+    list(correct = FALSE, message = "아직 아니에요 — 빈도표를 비율로 바꾸는 함수는 prop.table() 입니다. freq / sum(freq) 도 같은 결과입니다.")
+  }
+}, error = function(e) {
+  list(correct = FALSE, message = "freq 줄은 그대로 두고, prop <- 빈칸만 채워 실행하세요.")
+})
+```
+
+::: { .hint exercise="ex_prop" }
+`prop.table(freq)` 또는 `freq / sum(freq)` — 둘 다 같은 비율표를 만듭니다.
+:::
+
+::: { .solution exercise="ex_prop" }
+```r
+freq <- table(mtcars$cyl)
+prop <- prop.table(freq)
+prop
+```
+:::
