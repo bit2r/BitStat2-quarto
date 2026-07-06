@@ -5,6 +5,8 @@ webr:
   packages: [ggplot2]
 ---
 
+{{< include ../../../_extensions/r-wasm/live/_knitr.qmd >}}
+
 모집단이 어떤 분포든 **표본평균은 표본 크기가 커질수록 정규분포에 가까워진다.**
 아래 슬라이더를 움직이면 표본평균의 분포가 실시간으로 바뀝니다. *(OJS 입력 → 단일 webR 런타임 · showtext 없이 브라우저 웹폰트)*
 
@@ -13,7 +15,6 @@ webr:
 R 함수를 정의해 OJS로 내보내고(`define`), 슬라이더가 그 함수를 호출합니다 — 문서 권장 반응형 패턴.
 
 ```{webr}
-#| autorun: true
 #| edit: false
 #| output: false
 #| define:
@@ -39,12 +40,31 @@ clt_plot <- function(n, num_samples, dist) {
 
 ```{ojs}
 //| echo: false
-viewof n = Inputs.range([5, 100], {value: 30, step: 5, label: "표본 크기 (n)"})
-viewof num_samples = Inputs.range([100, 5000], {value: 1000, step: 100, label: "표본 수"})
-viewof dist = Inputs.select(["norm", "exp", "unif"], {value: "exp", label: "분포 선택", format: x => ({norm: "정규 분포", exp: "지수 분포", unif: "균등 분포"})[x]})
+viewof n_input = Inputs.range([5, 100], {value: 30, step: 5, label: "표본 크기 (n)"})
+viewof num_samples_input = Inputs.range([100, 5000], {value: 1000, step: 100, label: "표본 수"})
+viewof dist_input = Inputs.select(["norm", "exp", "unif"], {value: "exp", label: "분포 선택", format: x => ({norm: "정규 분포", exp: "지수 분포", unif: "균등 분포"})[x]})
+
+// webR 호출은 수 초 걸린다 — 이벤트마다 큐잉하면 드래그 시 수십 건이 밀려
+// "입력과 플롯 불일치"로 보인다(GOTCHA §9h). 입력이 멈춘 뒤 한 번만 호출.
+n = debounce(viewof n_input)
+num_samples = debounce(viewof num_samples_input)
+dist = debounce(viewof dist_input)
 
 // 슬라이더 값으로 R 함수 호출 → 값이 바뀌면 자동 재실행(반응형)
 clt_plot(n, num_samples, dist)
+
+function debounce(view, delay = 500) {
+  return Generators.observe(notify => {
+    let timer = null;
+    notify(view.value);
+    const oninput = () => {
+      clearTimeout(timer);
+      timer = setTimeout(() => notify(view.value), delay);
+    };
+    view.addEventListener("input", oninput);
+    return () => { clearTimeout(timer); view.removeEventListener("input", oninput); };
+  });
+}
 ```
 
 ## 2. 연습 — 표준오차 계산
@@ -57,6 +77,21 @@ sigma <- 1
 n <- 30
 se <- ______
 se
+```
+
+```{webr}
+#| exercise: ex_se
+#| check: true
+tryCatch({
+  se_expected <- get("sigma", envir = .envir_result) / sqrt(get("n", envir = .envir_result))
+  if (isTRUE(all.equal(.result, se_expected))) {
+    list(correct = TRUE, message = paste0("정답! se = σ/√n = ", signif(se_expected, 4)))
+  } else {
+    list(correct = FALSE, message = "아직 아니에요 — 분모는 표본 크기의 제곱근, 즉 sqrt(n)입니다.")
+  }
+}, error = function(e) {
+  list(correct = FALSE, message = "sigma와 n을 지우지 말고, se <- 빈칸만 채워 실행하세요.")
+})
 ```
 
 ::: { .hint exercise="ex_se" }
