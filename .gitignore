@@ -1,2 +1,12 @@
+# 빌드 산출물
+/_site/
 /.quarto/
-**/*.quarto_ipynb
+
+# webR 자가호스팅 자산(대용량)
+/assets/webr/
+
+.DS_Store
+
+# 비공개 작업 문서(원본 BitStat2 정책 상속)
+/CLAUDE.md
+/GOTCHA.md
