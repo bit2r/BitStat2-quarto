@@ -1,7 +1,150 @@
 ---
 engine: knitr
-title: "BitStat2 Live — 코드로 배우는 통계"
+pagetitle: "BitStat2 Live — 코드로 배우는 통계"
+page-layout: full
+toc: false
+css: assets/home.css
 ---
-R 코드를 직접 편집·실행하며 통계 원리를 익히는 트랙입니다. 단일 webR 런타임.
 
-- [중심극한정리 코드 실습](pages/05_infer/clt/index.qmd)
+```{=html}
+<div class="bs-home">
+
+<!-- ================= 히어로 ================= -->
+<section class="bs-hero">
+  <div class="bs-eyebrow">BitStat2 Live</div>
+  <div class="bs-h1">코드를 직접 고쳐 실행하며<br>배우는 통계</div>
+  <p class="bs-lede">
+    설치 없이 브라우저 안에서 <strong>R 코드를 편집·실행</strong>하고,
+    슬라이더로 모수를 바꿔 분포가 변하는 것을 눈으로 확인하고,
+    연습문제는 <strong>즉시 자동 채점</strong>됩니다.
+  </p>
+  <div class="bs-hero-meta">
+    <span>webR — 브라우저 WebAssembly R</span>
+    <span>설치·계정 불필요</span>
+    <span>짝 사이트: 만지며 배우는 <a href="https://r2bit.com/BitStat2/" style="color:inherit">BitStat2 앱</a></span>
+  </div>
+  <div class="bs-cta">
+    <a class="bs-btn bs-btn-primary" href="pages/05_infer/clt/index.html">중심극한정리 실습 시작 →</a>
+    <a class="bs-btn bs-btn-ghost" href="#curriculum">커리큘럼 보기</a>
+  </div>
+  <div class="bs-progress">
+    23개 토픽 중 <b>1개 라이브</b> — 나머지는 BitStat2 앱 사이트에서 먼저 만나고, 코드 실습판으로 순차 이식 중
+    <div class="bs-progress-bar"><i style="width:4.3%"></i></div>
+  </div>
+</section>
+
+<!-- ================= 학습 방식 ================= -->
+<section class="bs-how">
+  <div>
+    <h3>편집형 R 셀 <code>Run Code</code></h3>
+    <p>예제 코드의 값을 직접 바꿔 실행합니다. n을 5에서 100으로 고쳐보는 것이 곧 학습입니다.</p>
+  </div>
+  <div>
+    <h3>반응형 시각화 <code>OJS × webR</code></h3>
+    <p>슬라이더를 움직이면 R 함수가 다시 실행되어 플롯이 즉시 갱신됩니다.</p>
+  </div>
+  <div>
+    <h3>자동 채점 연습문제 <code>check</code></h3>
+    <p>빈칸을 채워 실행하면 정답 여부와 힌트·풀이가 그 자리에서 제공됩니다.</p>
+  </div>
+</section>
+
+<!-- ================= 커리큘럼 맵 ================= -->
+<section class="bs-map" id="curriculum">
+  <div class="bs-map-head">
+    <h2>커리큘럼</h2>
+    <span class="bs-legend"><b>●</b> 라이브 · ○ 준비 중</span>
+  </div>
+  <div class="bs-grid">
+
+  <div class="bs-ch">
+    <div class="bs-ch-no">01</div>
+    <h3>데이터</h3>
+    <p class="bs-ch-sub">데이터 생성과 분포</p>
+    <ul>
+      <li>이산형 분포</li>
+      <li>연속형 분포</li>
+      <li>연속형 분포 적합</li>
+      <li>대표적 표본추출 방법</li>
+    </ul>
+  </div>
+
+  <div class="bs-ch">
+    <div class="bs-ch-no">02</div>
+    <h3>탐색적 데이터 분석</h3>
+    <p class="bs-ch-sub">EDA — 요약과 구조 파악</p>
+    <ul>
+      <li>기술통계 개념 이해</li>
+      <li>단변량 기술통계</li>
+      <li>다변량 기술통계</li>
+      <li>워드 클라우드</li>
+    </ul>
+  </div>
+
+  <div class="bs-ch">
+    <div class="bs-ch-no">03</div>
+    <h3>시각화</h3>
+    <p class="bs-ch-sub">그래프 문법으로 보는 데이터</p>
+    <ul>
+      <li>데이터 시각화</li>
+      <li>그래프 문법 (esquisse)</li>
+    </ul>
+  </div>
+
+  <div class="bs-ch">
+    <div class="bs-ch-no">04</div>
+    <h3>통계 검정</h3>
+    <p class="bs-ch-sub">평균과 비율 검정</p>
+    <ul>
+      <li>x-점수 확률계산</li>
+      <li>단일 평균 가설 검정</li>
+      <li>단일 비율 가설 검정</li>
+      <li>이표본 평균차이 검정</li>
+      <li>2-비율 가설 검정</li>
+    </ul>
+  </div>
+
+  <div class="bs-ch">
+    <div class="bs-ch-no">05</div>
+    <h3>추론</h3>
+    <p class="bs-ch-sub">표본에서 모집단으로</p>
+    <ul>
+      <li class="bs-live"><a href="pages/05_infer/clt/index.html">중심극한정리</a><span class="bs-badge">LIVE</span></li>
+      <li>신뢰구간</li>
+    </ul>
+  </div>
+
+  <div class="bs-ch">
+    <div class="bs-ch-no">06</div>
+    <h3>회귀분석</h3>
+    <p class="bs-ch-sub">관계의 모형화</p>
+    <ul>
+      <li>상관분석과 단순 회귀분석</li>
+      <li>회귀분석</li>
+    </ul>
+  </div>
+
+  <div class="bs-ch">
+    <div class="bs-ch-no">07</div>
+    <h3>통계이론</h3>
+    <p class="bs-ch-sub">기초 이론과 응용</p>
+    <ul>
+      <li>대수의 법칙</li>
+      <li>최대우도추정</li>
+      <li>표본 크기</li>
+      <li>군집분석</li>
+    </ul>
+  </div>
+
+  </div>
+</section>
+
+<!-- ================= 푸터 노트 ================= -->
+<p class="bs-note">
+  webR 런타임은 첫 방문 시 수십 초간 내려받습니다(이후 캐시).
+  콘텐츠 원본과 인터랙티브 앱 버전은
+  <a href="https://r2bit.com/BitStat2/">BitStat2 — 오픈 통계 패키지</a>에 있습니다.
+</p>
+
+</div>
+```

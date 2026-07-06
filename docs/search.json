@@ -1,0 +1,30 @@
+[
+  {
+    "objectID": "pages/05_infer/clt/index.html",
+    "href": "pages/05_infer/clt/index.html",
+    "title": "중심극한정리 — 코드 실습",
+    "section": "",
+    "text": "모집단이 어떤 분포든 표본평균은 표본 크기가 커질수록 정규분포에 가까워진다. 아래 슬라이더를 움직이면 표본평균의 분포가 실시간으로 바뀝니다. (OJS 입력 → 단일 webR 런타임 · showtext 없이 브라우저 웹폰트)"
+  },
+  {
+    "objectID": "pages/05_infer/clt/index.html#표본평균의-분포-슬라이더-반응",
+    "href": "pages/05_infer/clt/index.html#표본평균의-분포-슬라이더-반응",
+    "title": "중심극한정리 — 코드 실습",
+    "section": "1. 표본평균의 분포 (슬라이더 반응)",
+    "text": "1. 표본평균의 분포 (슬라이더 반응)\nR 함수를 정의해 OJS로 내보내고(define), 슬라이더가 그 함수를 호출합니다 — 문서 권장 반응형 패턴.\n\n\n\n\n\n\n\n\n\nviewof n_input = Inputs.range([5, 100], {value: 30, step: 5, label: \"표본 크기 (n)\"})\nviewof num_samples_input = Inputs.range([100, 5000], {value: 1000, step: 100, label: \"표본 수\"})\nviewof dist_input = Inputs.select([\"norm\", \"exp\", \"unif\"], {value: \"exp\", label: \"분포 선택\", format: x =&gt; ({norm: \"정규 분포\", exp: \"지수 분포\", unif: \"균등 분포\"})[x]})\n\n// webR 호출은 수 초 걸린다 — 이벤트마다 큐잉하면 드래그 시 수십 건이 밀려\n// \"입력과 플롯 불일치\"로 보인다(GOTCHA §9h). 입력이 멈춘 뒤 한 번만 호출.\nn = debounce(viewof n_input)\nnum_samples = debounce(viewof num_samples_input)\ndist = debounce(viewof dist_input)\n\n// 슬라이더 값으로 R 함수 호출 → 값이 바뀌면 자동 재실행(반응형)\nclt_plot(n, num_samples, dist)\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\nfunction debounce(view, delay = 500) {\n  return Generators.observe(notify =&gt; {\n    let timer = null;\n    notify(view.value);\n    const oninput = () =&gt; {\n      clearTimeout(timer);\n      timer = setTimeout(() =&gt; notify(view.value), delay);\n    };\n    view.addEventListener(\"input\", oninput);\n    return () =&gt; { clearTimeout(timer); view.removeEventListener(\"input\", oninput); };\n  });\n}"
+  },
+  {
+    "objectID": "pages/05_infer/clt/index.html#연습-표준오차-계산",
+    "href": "pages/05_infer/clt/index.html#연습-표준오차-계산",
+    "title": "중심극한정리 — 코드 실습",
+    "section": "2. 연습 — 표준오차 계산",
+    "text": "2. 연습 — 표준오차 계산\n표준오차는 \\(\\sigma/\\sqrt{n}\\) 입니다. 아래 빈칸을 채워 실행하세요.\n\n\n\n\n\n\n\n\n\n\n\n\n분모는 표본 크기의 제곱근입니다: sqrt(n).\n\n\nse &lt;- sigma / sqrt(n)\nse"
+  },
+  {
+    "objectID": "index.html",
+    "href": "index.html",
+    "title": "BitStat2 Live",
+    "section": "",
+    "text": "BitStat2 Live\n  코드를 직접 고쳐 실행하며배우는 통계\n  \n    설치 없이 브라우저 안에서 R 코드를 편집·실행하고,\n    슬라이더로 모수를 바꿔 분포가 변하는 것을 눈으로 확인하고,\n    연습문제는 즉시 자동 채점됩니다.\n  \n  \n    webR — 브라우저 WebAssembly R\n    설치·계정 불필요\n    짝 사이트: 만지며 배우는 BitStat2 앱\n  \n  \n    중심극한정리 실습 시작 →\n    커리큘럼 보기\n  \n  \n    23개 토픽 중 1개 라이브 — 나머지는 BitStat2 앱 사이트에서 먼저 만나고, 코드 실습판으로 순차 이식 중\n    \n  \n\n\n\n\n  \n    편집형 R 셀 Run Code\n    예제 코드의 값을 직접 바꿔 실행합니다. n을 5에서 100으로 고쳐보는 것이 곧 학습입니다.\n  \n  \n    반응형 시각화 OJS × webR\n    슬라이더를 움직이면 R 함수가 다시 실행되어 플롯이 즉시 갱신됩니다.\n  \n  \n    자동 채점 연습문제 check\n    빈칸을 채워 실행하면 정답 여부와 힌트·풀이가 그 자리에서 제공됩니다.\n  \n\n\n\n\n  \n    커리큘럼\n    ● 라이브 · ○ 준비 중\n  \n  \n\n  \n    01\n    데이터\n    데이터 생성과 분포\n    \n      이산형 분포\n      연속형 분포\n      연속형 분포 적합\n      대표적 표본추출 방법\n    \n  \n\n  \n    02\n    탐색적 데이터 분석\n    EDA — 요약과 구조 파악\n    \n      기술통계 개념 이해\n      단변량 기술통계\n      다변량 기술통계\n      워드 클라우드\n    \n  \n\n  \n    03\n    시각화\n    그래프 문법으로 보는 데이터\n    \n      데이터 시각화\n      그래프 문법 (esquisse)\n    \n  \n\n  \n    04\n    통계 검정\n    평균과 비율 검정\n    \n      x-점수 확률계산\n      단일 평균 가설 검정\n      단일 비율 가설 검정\n      이표본 평균차이 검정\n      2-비율 가설 검정\n    \n  \n\n  \n    05\n    추론\n    표본에서 모집단으로\n    \n      중심극한정리LIVE\n      신뢰구간\n    \n  \n\n  \n    06\n    회귀분석\n    관계의 모형화\n    \n      상관분석과 단순 회귀분석\n      회귀분석\n    \n  \n\n  \n    07\n    통계이론\n    기초 이론과 응용\n    \n      대수의 법칙\n      최대우도추정\n      표본 크기\n      군집분석\n    \n  \n\n  \n\n\n\n\n  webR 런타임은 첫 방문 시 수십 초간 내려받습니다(이후 캐시).\n  콘텐츠 원본과 인터랙티브 앱 버전은\n  BitStat2 — 오픈 통계 패키지에 있습니다."
+  }
+]
