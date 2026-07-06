@@ -12,3 +12,8 @@
 /GOTCHA.md
 
 **/*.quarto_ipynb
+
+# 루트 렌더 부산물(GOTCHA/CLAUDE/index 표준 렌더 대상 아님)
+/GOTCHA_files/
+/CLAUDE_files/
+/index_files/
