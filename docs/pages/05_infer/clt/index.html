@@ -62,7 +62,6 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 
 
 <script src="../../../site_libs/quarto-nav/quarto-nav.js"></script>
-<script src="../../../site_libs/quarto-nav/headroom.min.js"></script>
 <script src="../../../site_libs/clipboard/clipboard.min.js"></script>
 <script src="../../../site_libs/quarto-search/autocomplete.umd.js"></script>
 <script src="../../../site_libs/quarto-search/fuse.min.js"></script>
@@ -81,11 +80,11 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <script src="../../../site_libs/quarto-contrib/live-runtime/live-runtime.js" type="module"></script>
 <link href="../../../site_libs/quarto-contrib/live-runtime/live-runtime.css" rel="stylesheet">
 <script id="quarto-search-options" type="application/json">{
-  "location": "navbar",
+  "location": "sidebar",
   "copy-button": false,
   "collapse-after": 3,
-  "panel-placement": "end",
-  "type": "overlay",
+  "panel-placement": "start",
+  "type": "textbox",
   "limit": 50,
   "keyboard-shortcut": [
     "f",
@@ -149,40 +148,11 @@ window.Quarto = {
 
 </head>
 
-<body class="nav-fixed quarto-light">
+<body class="quarto-light">
 
 <div id="quarto-search-results"></div>
-  <header id="quarto-header" class="headroom fixed-top">
-    <nav class="navbar navbar-expand-lg " data-bs-theme="dark">
-      <div class="navbar-container container-fluid">
-      <div class="navbar-brand-container mx-auto">
-    <a class="navbar-brand" href="../../../index.html">
-    <span class="navbar-title">BitStat2 Live</span>
-    </a>
-  </div>
-            <div id="quarto-search" class="" title="Search"></div>
-          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" role="menu" aria-expanded="false" aria-label="Toggle navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
-  <span class="navbar-toggler-icon"></span>
-</button>
-          <div class="collapse navbar-collapse" id="navbarCollapse">
-            <ul class="navbar-nav navbar-nav-scroll me-auto">
-  <li class="nav-item">
-    <a class="nav-link" href="../../../index.html"> 
-<span class="menu-text">홈</span></a>
-  </li>  
-  <li class="nav-item">
-    <a class="nav-link active" href="../../../pages/05_infer/clt/index.html" aria-current="page"> 
-<span class="menu-text">중심극한정리</span></a>
-  </li>  
-</ul>
-          </div> <!-- /navcollapse -->
-            <div class="quarto-navbar-tools">
-</div>
-      </div> <!-- /container-fluid -->
-    </nav>
-</header>
 <!-- content -->
-<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
+<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article">
 <!-- sidebar -->
 <!-- margin-sidebar -->
     <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
@@ -217,6 +187,7 @@ window.Quarto = {
 </header>
 
 
+<p><a href="../../../index.html">← BitStat2 Live 홈</a></p>
 <p>모집단이 어떤 분포든 <strong>표본평균은 표본 크기가 커질수록 정규분포에 가까워진다.</strong> 아래 슬라이더를 움직이면 표본평균의 분포가 실시간으로 바뀝니다. <em>(OJS 입력 → 단일 webR 런타임 · showtext 없이 브라우저 웹폰트)</em></p>
 <section id="표본평균의-분포-슬라이더-반응" class="level2">
 <h2 class="anchored" data-anchor-id="표본평균의-분포-슬라이더-반응">1. 표본평균의 분포 (슬라이더 반응)</h2>
@@ -232,18 +203,18 @@ eyJhdHRyIjp7ImRlZmluZSI6WyJjbHRfcGxvdCJdLCJlZGl0IjpmYWxzZSwiZXZhbCI6dHJ1ZSwib3V0
 </div>
 </div>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code hidden" id="cb1" data-startfrom="43" data-source-offset="-0"><pre class="sourceCode js code-with-copy"><code class="sourceCode javascript" style="counter-reset: source-line 42;"><span id="cb1-43"><a href="#cb1-43" aria-hidden="true" tabindex="-1"></a>viewof n_input <span class="op">=</span> Inputs<span class="op">.</span><span class="fu">range</span>([<span class="dv">5</span><span class="op">,</span> <span class="dv">100</span>]<span class="op">,</span> {<span class="dt">value</span><span class="op">:</span> <span class="dv">30</span><span class="op">,</span> <span class="dt">step</span><span class="op">:</span> <span class="dv">5</span><span class="op">,</span> <span class="dt">label</span><span class="op">:</span> <span class="st">"표본 크기 (n)"</span>})</span>
-<span id="cb1-44"><a href="#cb1-44" aria-hidden="true" tabindex="-1"></a>viewof num_samples_input <span class="op">=</span> Inputs<span class="op">.</span><span class="fu">range</span>([<span class="dv">100</span><span class="op">,</span> <span class="dv">5000</span>]<span class="op">,</span> {<span class="dt">value</span><span class="op">:</span> <span class="dv">1000</span><span class="op">,</span> <span class="dt">step</span><span class="op">:</span> <span class="dv">100</span><span class="op">,</span> <span class="dt">label</span><span class="op">:</span> <span class="st">"표본 수"</span>})</span>
-<span id="cb1-45"><a href="#cb1-45" aria-hidden="true" tabindex="-1"></a>viewof dist_input <span class="op">=</span> Inputs<span class="op">.</span><span class="fu">select</span>([<span class="st">"norm"</span><span class="op">,</span> <span class="st">"exp"</span><span class="op">,</span> <span class="st">"unif"</span>]<span class="op">,</span> {<span class="dt">value</span><span class="op">:</span> <span class="st">"exp"</span><span class="op">,</span> <span class="dt">label</span><span class="op">:</span> <span class="st">"분포 선택"</span><span class="op">,</span> <span class="dt">format</span><span class="op">:</span> x <span class="kw">=&gt;</span> ({<span class="dt">norm</span><span class="op">:</span> <span class="st">"정규 분포"</span><span class="op">,</span> <span class="dt">exp</span><span class="op">:</span> <span class="st">"지수 분포"</span><span class="op">,</span> <span class="dt">unif</span><span class="op">:</span> <span class="st">"균등 분포"</span>})[x]})</span>
-<span id="cb1-46"><a href="#cb1-46" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-47"><a href="#cb1-47" aria-hidden="true" tabindex="-1"></a><span class="co">// webR 호출은 수 초 걸린다 — 이벤트마다 큐잉하면 드래그 시 수십 건이 밀려</span></span>
-<span id="cb1-48"><a href="#cb1-48" aria-hidden="true" tabindex="-1"></a><span class="co">// "입력과 플롯 불일치"로 보인다(GOTCHA §9h). 입력이 멈춘 뒤 한 번만 호출.</span></span>
-<span id="cb1-49"><a href="#cb1-49" aria-hidden="true" tabindex="-1"></a>n <span class="op">=</span> <span class="fu">debounce</span>(viewof n_input)</span>
-<span id="cb1-50"><a href="#cb1-50" aria-hidden="true" tabindex="-1"></a>num_samples <span class="op">=</span> <span class="fu">debounce</span>(viewof num_samples_input)</span>
-<span id="cb1-51"><a href="#cb1-51" aria-hidden="true" tabindex="-1"></a>dist <span class="op">=</span> <span class="fu">debounce</span>(viewof dist_input)</span>
-<span id="cb1-52"><a href="#cb1-52" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-53"><a href="#cb1-53" aria-hidden="true" tabindex="-1"></a><span class="co">// 슬라이더 값으로 R 함수 호출 → 값이 바뀌면 자동 재실행(반응형)</span></span>
-<span id="cb1-54"><a href="#cb1-54" aria-hidden="true" tabindex="-1"></a><span class="fu">clt_plot</span>(n<span class="op">,</span> num_samples<span class="op">,</span> dist)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code hidden" id="cb1" data-startfrom="45" data-source-offset="-0"><pre class="sourceCode js code-with-copy"><code class="sourceCode javascript" style="counter-reset: source-line 44;"><span id="cb1-45"><a href="#cb1-45" aria-hidden="true" tabindex="-1"></a>viewof n_input <span class="op">=</span> Inputs<span class="op">.</span><span class="fu">range</span>([<span class="dv">5</span><span class="op">,</span> <span class="dv">100</span>]<span class="op">,</span> {<span class="dt">value</span><span class="op">:</span> <span class="dv">30</span><span class="op">,</span> <span class="dt">step</span><span class="op">:</span> <span class="dv">5</span><span class="op">,</span> <span class="dt">label</span><span class="op">:</span> <span class="st">"표본 크기 (n)"</span>})</span>
+<span id="cb1-46"><a href="#cb1-46" aria-hidden="true" tabindex="-1"></a>viewof num_samples_input <span class="op">=</span> Inputs<span class="op">.</span><span class="fu">range</span>([<span class="dv">100</span><span class="op">,</span> <span class="dv">5000</span>]<span class="op">,</span> {<span class="dt">value</span><span class="op">:</span> <span class="dv">1000</span><span class="op">,</span> <span class="dt">step</span><span class="op">:</span> <span class="dv">100</span><span class="op">,</span> <span class="dt">label</span><span class="op">:</span> <span class="st">"표본 수"</span>})</span>
+<span id="cb1-47"><a href="#cb1-47" aria-hidden="true" tabindex="-1"></a>viewof dist_input <span class="op">=</span> Inputs<span class="op">.</span><span class="fu">select</span>([<span class="st">"norm"</span><span class="op">,</span> <span class="st">"exp"</span><span class="op">,</span> <span class="st">"unif"</span>]<span class="op">,</span> {<span class="dt">value</span><span class="op">:</span> <span class="st">"exp"</span><span class="op">,</span> <span class="dt">label</span><span class="op">:</span> <span class="st">"분포 선택"</span><span class="op">,</span> <span class="dt">format</span><span class="op">:</span> x <span class="kw">=&gt;</span> ({<span class="dt">norm</span><span class="op">:</span> <span class="st">"정규 분포"</span><span class="op">,</span> <span class="dt">exp</span><span class="op">:</span> <span class="st">"지수 분포"</span><span class="op">,</span> <span class="dt">unif</span><span class="op">:</span> <span class="st">"균등 분포"</span>})[x]})</span>
+<span id="cb1-48"><a href="#cb1-48" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-49"><a href="#cb1-49" aria-hidden="true" tabindex="-1"></a><span class="co">// webR 호출은 수 초 걸린다 — 이벤트마다 큐잉하면 드래그 시 수십 건이 밀려</span></span>
+<span id="cb1-50"><a href="#cb1-50" aria-hidden="true" tabindex="-1"></a><span class="co">// "입력과 플롯 불일치"로 보인다(GOTCHA §9h). 입력이 멈춘 뒤 한 번만 호출.</span></span>
+<span id="cb1-51"><a href="#cb1-51" aria-hidden="true" tabindex="-1"></a>n <span class="op">=</span> <span class="fu">debounce</span>(viewof n_input)</span>
+<span id="cb1-52"><a href="#cb1-52" aria-hidden="true" tabindex="-1"></a>num_samples <span class="op">=</span> <span class="fu">debounce</span>(viewof num_samples_input)</span>
+<span id="cb1-53"><a href="#cb1-53" aria-hidden="true" tabindex="-1"></a>dist <span class="op">=</span> <span class="fu">debounce</span>(viewof dist_input)</span>
+<span id="cb1-54"><a href="#cb1-54" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-55"><a href="#cb1-55" aria-hidden="true" tabindex="-1"></a><span class="co">// 슬라이더 값으로 R 함수 호출 → 값이 바뀌면 자동 재실행(반응형)</span></span>
+<span id="cb1-56"><a href="#cb1-56" aria-hidden="true" tabindex="-1"></a><span class="fu">clt_plot</span>(n<span class="op">,</span> num_samples<span class="op">,</span> dist)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-display">
 <div>
 <div id="ojs-cell-1-1" data-nodetype="declaration">
@@ -293,18 +264,18 @@ eyJhdHRyIjp7ImRlZmluZSI6WyJjbHRfcGxvdCJdLCJlZGl0IjpmYWxzZSwiZXZhbCI6dHJ1ZSwib3V0
 </div>
 </div>
 </div>
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code hidden" id="cb2" data-startfrom="56" data-source-offset="-619"><pre class="sourceCode js code-with-copy"><code class="sourceCode javascript" style="counter-reset: source-line 55;"><span id="cb2-56"><a href="#cb2-56" aria-hidden="true" tabindex="-1"></a><span class="kw">function</span> <span class="fu">debounce</span>(view<span class="op">,</span> delay <span class="op">=</span> <span class="dv">500</span>) {</span>
-<span id="cb2-57"><a href="#cb2-57" aria-hidden="true" tabindex="-1"></a>  <span class="cf">return</span> Generators<span class="op">.</span><span class="fu">observe</span>(notify <span class="kw">=&gt;</span> {</span>
-<span id="cb2-58"><a href="#cb2-58" aria-hidden="true" tabindex="-1"></a>    <span class="kw">let</span> timer <span class="op">=</span> <span class="kw">null</span><span class="op">;</span></span>
-<span id="cb2-59"><a href="#cb2-59" aria-hidden="true" tabindex="-1"></a>    <span class="fu">notify</span>(view<span class="op">.</span><span class="at">value</span>)<span class="op">;</span></span>
-<span id="cb2-60"><a href="#cb2-60" aria-hidden="true" tabindex="-1"></a>    <span class="kw">const</span> oninput <span class="op">=</span> () <span class="kw">=&gt;</span> {</span>
-<span id="cb2-61"><a href="#cb2-61" aria-hidden="true" tabindex="-1"></a>      <span class="pp">clearTimeout</span>(timer)<span class="op">;</span></span>
-<span id="cb2-62"><a href="#cb2-62" aria-hidden="true" tabindex="-1"></a>      timer <span class="op">=</span> <span class="pp">setTimeout</span>(() <span class="kw">=&gt;</span> <span class="fu">notify</span>(view<span class="op">.</span><span class="at">value</span>)<span class="op">,</span> delay)<span class="op">;</span></span>
-<span id="cb2-63"><a href="#cb2-63" aria-hidden="true" tabindex="-1"></a>    }<span class="op">;</span></span>
-<span id="cb2-64"><a href="#cb2-64" aria-hidden="true" tabindex="-1"></a>    view<span class="op">.</span><span class="fu">addEventListener</span>(<span class="st">"input"</span><span class="op">,</span> oninput)<span class="op">;</span></span>
-<span id="cb2-65"><a href="#cb2-65" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> () <span class="kw">=&gt;</span> { <span class="pp">clearTimeout</span>(timer)<span class="op">;</span> view<span class="op">.</span><span class="fu">removeEventListener</span>(<span class="st">"input"</span><span class="op">,</span> oninput)<span class="op">;</span> }<span class="op">;</span></span>
-<span id="cb2-66"><a href="#cb2-66" aria-hidden="true" tabindex="-1"></a>  })<span class="op">;</span></span>
-<span id="cb2-67"><a href="#cb2-67" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code hidden" id="cb2" data-startfrom="58" data-source-offset="-619"><pre class="sourceCode js code-with-copy"><code class="sourceCode javascript" style="counter-reset: source-line 57;"><span id="cb2-58"><a href="#cb2-58" aria-hidden="true" tabindex="-1"></a><span class="kw">function</span> <span class="fu">debounce</span>(view<span class="op">,</span> delay <span class="op">=</span> <span class="dv">500</span>) {</span>
+<span id="cb2-59"><a href="#cb2-59" aria-hidden="true" tabindex="-1"></a>  <span class="cf">return</span> Generators<span class="op">.</span><span class="fu">observe</span>(notify <span class="kw">=&gt;</span> {</span>
+<span id="cb2-60"><a href="#cb2-60" aria-hidden="true" tabindex="-1"></a>    <span class="kw">let</span> timer <span class="op">=</span> <span class="kw">null</span><span class="op">;</span></span>
+<span id="cb2-61"><a href="#cb2-61" aria-hidden="true" tabindex="-1"></a>    <span class="fu">notify</span>(view<span class="op">.</span><span class="at">value</span>)<span class="op">;</span></span>
+<span id="cb2-62"><a href="#cb2-62" aria-hidden="true" tabindex="-1"></a>    <span class="kw">const</span> oninput <span class="op">=</span> () <span class="kw">=&gt;</span> {</span>
+<span id="cb2-63"><a href="#cb2-63" aria-hidden="true" tabindex="-1"></a>      <span class="pp">clearTimeout</span>(timer)<span class="op">;</span></span>
+<span id="cb2-64"><a href="#cb2-64" aria-hidden="true" tabindex="-1"></a>      timer <span class="op">=</span> <span class="pp">setTimeout</span>(() <span class="kw">=&gt;</span> <span class="fu">notify</span>(view<span class="op">.</span><span class="at">value</span>)<span class="op">,</span> delay)<span class="op">;</span></span>
+<span id="cb2-65"><a href="#cb2-65" aria-hidden="true" tabindex="-1"></a>    }<span class="op">;</span></span>
+<span id="cb2-66"><a href="#cb2-66" aria-hidden="true" tabindex="-1"></a>    view<span class="op">.</span><span class="fu">addEventListener</span>(<span class="st">"input"</span><span class="op">,</span> oninput)<span class="op">;</span></span>
+<span id="cb2-67"><a href="#cb2-67" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> () <span class="kw">=&gt;</span> { <span class="pp">clearTimeout</span>(timer)<span class="op">;</span> view<span class="op">.</span><span class="fu">removeEventListener</span>(<span class="st">"input"</span><span class="op">,</span> oninput)<span class="op">;</span> }<span class="op">;</span></span>
+<span id="cb2-68"><a href="#cb2-68" aria-hidden="true" tabindex="-1"></a>  })<span class="op">;</span></span>
+<span id="cb2-69"><a href="#cb2-69" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-display">
 <div>
 <div id="ojs-cell-1-8" data-nodetype="declaration">

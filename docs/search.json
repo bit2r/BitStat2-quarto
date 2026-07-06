@@ -4,7 +4,7 @@
     "href": "pages/05_infer/clt/index.html",
     "title": "중심극한정리 — 코드 실습",
     "section": "",
-    "text": "모집단이 어떤 분포든 표본평균은 표본 크기가 커질수록 정규분포에 가까워진다. 아래 슬라이더를 움직이면 표본평균의 분포가 실시간으로 바뀝니다. (OJS 입력 → 단일 webR 런타임 · showtext 없이 브라우저 웹폰트)"
+    "text": "← BitStat2 Live 홈\n모집단이 어떤 분포든 표본평균은 표본 크기가 커질수록 정규분포에 가까워진다. 아래 슬라이더를 움직이면 표본평균의 분포가 실시간으로 바뀝니다. (OJS 입력 → 단일 webR 런타임 · showtext 없이 브라우저 웹폰트)"
   },
   {
     "objectID": "pages/05_infer/clt/index.html#표본평균의-분포-슬라이더-반응",
