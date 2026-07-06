@@ -21,7 +21,7 @@ css: assets/home.css
   <div class="bs-hero-meta">
     <span>webR — 브라우저 WebAssembly R</span>
     <span>설치·계정 불필요</span>
-    <span>짝 사이트: 만지며 배우는 <a href="https://r2bit.com/BitStat2/" style="color:inherit">BitStat2 앱</a></span>
+    <span>짝 사이트: 만지며 배우는 <a href="https://r2bit.com/bitstat2-shiny/" style="color:inherit">BitStat2 앱</a></span>
   </div>
   <div class="bs-cta">
     <a class="bs-btn bs-btn-primary" href="pages/05_infer/clt/index.html">중심극한정리 실습 시작 →</a>
@@ -141,8 +141,8 @@ css: assets/home.css
 <!-- ================= 푸터 노트 ================= -->
 <p class="bs-note">
   webR 런타임은 첫 방문 시 수십 초간 내려받습니다(이후 캐시).
-  콘텐츠 원본과 인터랙티브 앱 버전은
-  <a href="https://r2bit.com/BitStat2/">BitStat2 — 오픈 통계 패키지</a>에 있습니다.
+  인터랙티브 앱 버전은 <a href="https://r2bit.com/bitstat2-shiny/">BitStat2 앱</a>,
+  프로젝트 포털은 <a href="https://r2bit.com/BitStat2/">빛스탯2</a>에 있습니다.
 </p>
 
 </div>
